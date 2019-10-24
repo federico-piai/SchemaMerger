@@ -6,7 +6,7 @@ package model;
  * @author federico
  *
  */
-public class Source {
+public class Source implements Comparable<Source> {
 
 	private String category;
 	private String website;
@@ -59,5 +59,13 @@ public class Source {
 	@Override
 	public String toString() {
 		return this.category + "###" + this.website;
+	}
+
+	@Override
+	public int compareTo(Source that) {
+		if (this.category.equals(that.getCategory())){
+			return this.website.compareTo(that.getWebsite());
+		}
+		return this.category.compareTo(that.getCategory());
 	}
 }

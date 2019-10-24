@@ -138,7 +138,9 @@ public class MongoAlignmentDao implements AlignmentDao {
 						List<SourceProductPage> linkageP = intL.getOrDefault(urlP, new ArrayList<SourceProductPage>());
 						List<SourceProductPage> linkageRlDoc = intL.getOrDefault(urlRlDoc,
 								new ArrayList<SourceProductPage>());
-						linkageP.add(MongoDbUtils.convertDocumentToProductPage(rlDoc));
+						// TODO The linkage attribute here is "wrong" (unwinded) but it is not used anymore 
+						// so it should be ok. However it is not a nice solution 
+						linkageP.add(MongoDbUtils.convertUnwindedDocumentToProductPage(rlDoc));
 						linkageRlDoc.add(MongoDbUtils.convertDocumentToProductPage(p));
 						intL.put(urlP, linkageP);
 						intL.put(urlRlDoc, linkageRlDoc);

@@ -15,10 +15,7 @@ public class UrlUtils {
 		String domain = null;
 		url = url.replaceAll(" ", "%20").replaceAll("\\|", "%7C").replaceAll("\"", "%22");
 		if (url.startsWith("http:/") || url.startsWith("https:/")) {
-			if (!url.startsWith("http://") && !url.startsWith("https://")) {
-				url = url.replace("http:/", "http://");
-				url = url.replace("https:/", "https://");
-			}
+			url = url.replaceAll("http(s?):/+", "http$1://");
 		} else
 			url = "http://" + url;
 

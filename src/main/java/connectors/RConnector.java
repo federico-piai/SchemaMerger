@@ -62,7 +62,7 @@ public class RConnector {
 	public void loadModel() {
 		// load classifier model
 		try {
-			this.eng.parseAndEval("load('" + System.getProperty("user.dir") + '/' + this.modelPath + "')");
+			this.eng.parseAndEval("load('" + System.getProperty("user.dir").replace('\\', '/') + '/' + this.modelPath + "')");
 		} catch (REngineException | REXPMismatchException e) {
 			e.printStackTrace();
 		}
@@ -90,6 +90,8 @@ public class RConnector {
 
 		} catch (REngineException | REXPMismatchException e) {
 			e.printStackTrace();
+		} catch (Error e) {
+			System.out.println("ERROR!!!! " + e.getLocalizedMessage());
 		}
 	}
 

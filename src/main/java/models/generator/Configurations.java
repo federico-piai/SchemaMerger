@@ -19,6 +19,7 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 	private String modelPath;
 	private List<String> categories;
 	private boolean alreadyTrained;
+	private boolean trainingDataAlreadyAvailable;
 
 	// Parameters for generation of Synthetic Dataset
 	private int maxPages;
@@ -56,6 +57,7 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 		this.modelPath = prop.getProperty("modelPath");
 		this.categories = Arrays.asList(prop.getProperty("categories").split("/"));
 		this.alreadyTrained = Boolean.valueOf(prop.getProperty("alreadyTrained"));
+		this.trainingDataAlreadyAvailable = Boolean.valueOf(prop.getProperty("trainingDataAlreadyAvailable"));
 
 		this.maxPages = Integer.valueOf(prop.getProperty("maxPages"));
 		this.minPages = Integer.valueOf(prop.getProperty("minPages"));
@@ -98,6 +100,14 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 	 */
 	public boolean isAlreadyTrained() {
 		return alreadyTrained;
+	}
+	
+	/**
+	 * No model available, but the training data are there
+	 * @return
+	 */
+	public boolean trainingDataAlreadyAvailable() {
+		return this.trainingDataAlreadyAvailable;
 	}
 
 	public int getMaxPages() {

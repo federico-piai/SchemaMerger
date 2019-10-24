@@ -37,8 +37,31 @@ public class DatasetAlignmentAlgorithm {
 	 * order.
 	 */
 	// TODO 1 move to configuration 2 COMPUTE this order using dataset
-	private static final List<String> WEBSITES_SORTED_REAL_DATASET = Arrays.asList("gosale.com", "price-hunt.com",
-			"shopping.dealtime.com");
+	private static final List<String> WEBSITES_SORTED_REAL_DATASET = Arrays.asList(
+			"www.ebay.com", 
+			"www.gosale.com", 
+			"www.shopbot.com.au", 
+			"www.buzzillions.com", 
+			"www.price-hunt.com", 
+			"www.flipkart.com", 
+			"cammarkt.com", 
+			"www.priceme.co.nz", 
+			"www.pricedekho.com", 
+			"www.alibaba.com", 
+			"www.shopmania.in", 
+			"www.henrys.com", 
+			"www.eglobalcentral.co.uk", 
+			"www.mypriceindia.com", 
+			"buy.net", 
+			"www.garricks.com.au", 
+			"www.camerafarm.com.au", 
+			"www.pcconnection.com", 
+			"www.walmart.com", 
+			"www.cambuy.com.au", 
+			"www.wexphotographic.com", 
+			"www.ukdigitalcameras.co.uk", 
+			"www.ilgs.net", 
+			"www.canon-europe.com");
 
 	/**
 	 * Se TRUE, gli attributi delle sorgenti che non matchano con nessun attributo
@@ -115,20 +138,22 @@ public class DatasetAlignmentAlgorithm {
 				r.loadModel();
 				System.out.println("FINE LOADING DEL MODEL");
 			} else {
-				System.out.println("INIZIO GENERAZIONE TRAINING SET");
-				String csPath = config.getTrainingSetPath() + "/clones.csv";
-				fdc.printClonedSources("clones", findClonedSources(categories));
-				Map<String, List<String>> clonedSources = fdc.readClonedSources(csPath);
-				Map<String, List<String>> tSet = generateTrainingSets(categories, clonedSources);
-				fdc.printTrainingSet("trainingSet", tSet.get(categories.get(0)));
-				System.out.println("FINE GENERAZIONE TRAINING SET - INIZIO TRAINING");
+				if (!config.trainingDataAlreadyAvailable()) {
+					System.out.println("INIZIO GENERAZIONE TRAINING SET");
+					String csPath = config.getTrainingSetPath() + "/clones.csv";
+					fdc.printClonedSources("clones", findClonedSources(categories));
+					Map<String, List<String>> clonedSources = fdc.readClonedSources(csPath);
+					Map<String, List<String>> tSet = generateTrainingSets(categories, clonedSources);
+					fdc.printTrainingSet("trainingSet", tSet.get(categories.get(0)));
+					System.out.println("FINE GENERAZIONE TRAINING SET - INIZIO TRAINING");
+				}
 				r.train(config.getTrainingSetPath() + "/trainingSet.csv");
 				System.out.println("FINE TRAINING");
 			}
 			// Classification
 			System.out.println("INIZIO GENERAZIONE SCHEMA");
 			CategoryMatcher cm = new CategoryMatcher(this.dao, r);
-			Schema schema = launchClassification(WEBSITES_SORTED_REAL_DATASET, categories.get(0), cm, 0, true,
+			Schema schema = launchClassification(WEBSITES_SORTED_REAL_DATASET, categories.get(0), cm, 0, false,
 					WITH_REFERENCE);
 			fdc.printMatchSchema("clusters", schema);
 			System.out.println("FINE GENERAZIONE SCHEMA");
