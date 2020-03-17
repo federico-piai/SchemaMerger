@@ -28,7 +28,7 @@ public class Cohordinator {
 
 	public static void main(String[] args) {
 		LaunchConfiguration setupConfiguration = LaunchConfiguration.setupConfiguration(args);
-		System.out.println("UTILIZZARE DATASET SINTETICO? (S/N)");
+		System.out.println("UTILIZZARE DATASET SINTETICO yoyo? (S/N)");
 		boolean useSynthDataset = false;
 		try (Scanner scanner = new Scanner(System.in)) {
 			useSynthDataset = Character.toLowerCase(scanner.next().charAt(0)) == 's';
