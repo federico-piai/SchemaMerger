@@ -15,6 +15,8 @@ import model.SourceProductPage;
  * due to concentrating bad conception in a single class to refactor, but after
  * refactoring we should consider if joining the 2 classes OR separate them in a
  * different way.
+ * <p>
+ * Always presents the sourceNames that allows limiting the sources to the ones provided in input.
  * 
  * @author federico
  *
@@ -29,16 +31,18 @@ public interface AlignmentDao {
 	 * @param category
 	 * @return
 	 */
-	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category);
+	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category,
+			List<String> sourceNames);
 
 	/**
 	 * Fetches the schemas of all sources that belong to one of the categories
 	 * selected. Doesn't consider schemas without attributes
 	 * 
 	 * @param categories
+	 * @param sourceNames if you want to limit to selected sources, null to skip limiting
 	 * @return
 	 */
-	public Map<Source, List<String>> getSchemas(List<String> categories);
+	public Map<Source, List<String>> getSchemas(List<String> categories, List<String> sourceNames);
 
 	/**
 	 * Fetches the schema of a single source
@@ -64,12 +68,13 @@ public interface AlignmentDao {
 	 * <li>Build a map p4 --> p1,p2,p3; p5 --> p1,p2,p3
 	 * </ul>
 	 * 
-	 * @param websites
+	 * @param catalogWebsites
 	 *            websites pertaining to the catalog currently
 	 * @param category
 	 * @return
 	 */
-	public Map<SourceProductPage, List<SourceProductPage>> getProdsInRL(List<String> websites, String category);
+	public Map<SourceProductPage, List<SourceProductPage>> getProdsInRL(List<String> catalogWebsites, 
+			String category, List<String> sourceNames);
 
 	/**
 	 * Return product pages that match given filters.If a parameter is not provided
@@ -84,7 +89,7 @@ public interface AlignmentDao {
 	 * @return
 	 */
 	public List<SourceProductPage> getPagesLinkedWithSource2filtered(String category,
-			String website2, String attribute1);
+			String website2, String attribute1, List<String> sourceName);
 
 	/**
 	 * Find all pages of source website2 linked by pages in cList1, and having

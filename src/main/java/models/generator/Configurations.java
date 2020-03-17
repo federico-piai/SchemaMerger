@@ -18,6 +18,7 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 	private String databaseName;
 	private String modelPath;
 	private List<String> categories;
+	private List<String> websitesOrdered;
 	private boolean alreadyTrained;
 	private boolean trainingDataAlreadyAvailable;
 
@@ -56,6 +57,7 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 		this.databaseName = prop.getProperty("databaseName");
 		this.modelPath = prop.getProperty("modelPath");
 		this.categories = Arrays.asList(prop.getProperty("categories").split("/"));
+		this.websitesOrdered = Arrays.asList(prop.getProperty("websitesOrdered").split(","));
 		this.alreadyTrained = Boolean.valueOf(prop.getProperty("alreadyTrained"));
 		this.trainingDataAlreadyAvailable = Boolean.valueOf(prop.getProperty("trainingDataAlreadyAvailable"));
 
@@ -232,6 +234,10 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 
 	public void setCategories(List<String> categories) {
 		this.categories = categories;
+	}
+
+	public List<String> getWebsitesOrdered() {
+		return websitesOrdered;
 	}
 
 	public int getMaxLinkage() {

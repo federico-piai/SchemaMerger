@@ -1,7 +1,6 @@
 package launchers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,42 +31,10 @@ import models.matcher.Schema;
 public class DatasetAlignmentAlgorithm {
 
 	/**
-	 * List of websites in real dataset, ordered by linkage. In the dataset we
-	 * already have a Schemas collection with sources, BUT we don't have the good
-	 * order.
-	 */
-	// TODO 1 move to configuration 2 COMPUTE this order using dataset
-	private static final List<String> WEBSITES_SORTED_REAL_DATASET = Arrays.asList(
-			"www.ebay.com", 
-			"www.gosale.com", 
-			"www.shopbot.com.au", 
-			"www.buzzillions.com", 
-			"www.price-hunt.com", 
-			"www.flipkart.com", 
-			"cammarkt.com", 
-			"www.priceme.co.nz", 
-			"www.pricedekho.com", 
-			"www.alibaba.com", 
-			"www.shopmania.in", 
-			"www.henrys.com", 
-			"www.eglobalcentral.co.uk", 
-			"www.mypriceindia.com", 
-			"buy.net", 
-			"www.garricks.com.au", 
-			"www.camerafarm.com.au", 
-			"www.pcconnection.com", 
-			"www.walmart.com", 
-			"www.cambuy.com.au", 
-			"www.wexphotographic.com", 
-			"www.ukdigitalcameras.co.uk", 
-			"www.ilgs.net", 
-			"www.canon-europe.com");
-
-	/**
 	 * Se TRUE, gli attributi delle sorgenti che non matchano con nessun attributo
 	 * del catalogo vengono scartati. 
 	 */
-	static final boolean WITH_REFERENCE = false;
+	static final boolean WITH_REFERENCE = true;
 
 	private AlignmentDao dao;
 	private FileDataConnector fdc;
@@ -117,7 +84,7 @@ public class DatasetAlignmentAlgorithm {
 	
 			// Classification
 			System.out.println("INIZIO GENERAZIONE SCHEMA");
-			CategoryMatcher cm = new CategoryMatcher(this.dao, r);
+			CategoryMatcher cm = new CategoryMatcher(this.dao, r, sourcesByLinkage);
 			Schema schema = launchClassification(sourcesByLinkage, categories.get(0), cm, 0, true, WITH_REFERENCE);
 			fdc.printMatchSchema("clusters", schema);
 			System.out.println("FINE GENERAZIONE SCHEMA");
@@ -152,9 +119,9 @@ public class DatasetAlignmentAlgorithm {
 			}
 			// Classification
 			System.out.println("INIZIO GENERAZIONE SCHEMA");
-			CategoryMatcher cm = new CategoryMatcher(this.dao, r);
-			Schema schema = launchClassification(WEBSITES_SORTED_REAL_DATASET, categories.get(0), cm, 0, false,
-					WITH_REFERENCE);
+			CategoryMatcher cm = new CategoryMatcher(this.dao, r, config.getWebsitesOrdered());
+			Schema schema = launchClassification(config.getWebsitesOrdered(), 
+					categories.get(0), cm, 0, false, WITH_REFERENCE);
 			fdc.printMatchSchema("clusters", schema);
 			System.out.println("FINE GENERAZIONE SCHEMA");
 		} finally {
@@ -187,7 +154,8 @@ public class DatasetAlignmentAlgorithm {
 	 */
 	private Map<Source, List<Source>> findClonedSources(List<String> categories) {
 		Map<Source, List<Source>> clonedSources = new HashMap<>();
-		Map<Source, List<String>> sourceSchemas = this.dao.getSchemas(categories);
+		Map<Source, List<String>> sourceSchemas = 
+				this.dao.getSchemas(categories, config.getWebsitesOrdered());
 
 		for (Source source1 : sourceSchemas.keySet()) {
 			List<String> attributes1 = sourceSchemas.get(source1);
@@ -222,7 +190,8 @@ public class DatasetAlignmentAlgorithm {
 	private Map<String, List<String>> generateTrainingSets(List<String> categories,
 			Map<String, List<String>> clonedSources) {
 
-		TrainingSetGenerator tsg = new TrainingSetGenerator(this.dao, clonedSources);
+		TrainingSetGenerator tsg = new TrainingSetGenerator(this.dao, clonedSources, 
+				this.config.getWebsitesOrdered());
 		Map<String, List<String>> trainingSets = new HashMap<>();
 
 		for (String category : categories) {

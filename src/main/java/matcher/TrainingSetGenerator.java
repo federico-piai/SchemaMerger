@@ -31,15 +31,18 @@ public class TrainingSetGenerator {
 	private AlignmentDao dao;
 	private Map<String, List<String>> clonedSources;
 	private FeaturesBuilder fb;
+	private List<String> sourceNames;
 	
-	public TrainingSetGenerator(FeaturesBuilder fb, AlignmentDao dao, Map<String, List<String>> clSources) {
+	public TrainingSetGenerator(FeaturesBuilder fb, AlignmentDao dao, Map<String, 
+			List<String>> clSources, List<String> sourceNames) {
 		this.dao = dao;
 		this.clonedSources = clSources;
 		this.fb = fb;
+		this.sourceNames = sourceNames;
 	}	
 	
-	public TrainingSetGenerator(AlignmentDao dao, Map<String, List<String>> clSources) {
-		this(new FeaturesBuilder(), dao, clSources);
+	public TrainingSetGenerator(AlignmentDao dao, Map<String, List<String>> clSources, List<String> sourceNames) {
+		this(new FeaturesBuilder(), dao, clSources, sourceNames);
 	}
 
 	/**
@@ -65,7 +68,8 @@ public class TrainingSetGenerator {
 		 *  set as the good one even if it is not big enough 
 		 */
 		do {
-			List<SourceProductPage> sample = this.dao.getSamplePagesFromCategory(sampleSize, category);
+			List<SourceProductPage> sample = this.dao.getSamplePagesFromCategory(sampleSize, category, 
+					this.sourceNames);
 			Map<String, List<Tuple>> newExamples = getExamples(sample, ratio);
 			newSizeP = newExamples.get("positives").size();
 			newSizeN = newExamples.get("negatives").size();
@@ -229,7 +233,7 @@ public class TrainingSetGenerator {
 			for (Entry<String, Map<String, List<Tuple>>> s2_a2_tuple_entry : s2_a2_tuple.entrySet()) {
 				String source2 = s2_a2_tuple_entry.getKey();
 				List<SourceProductPage> pagesFromAllSourcesInLinkageS2 = this.dao.getPagesLinkedWithSource2filtered(category, source2,
-						attribute1);
+						attribute1, this.sourceNames);
 				Map<String, List<SourceProductPage>> w1_pagesLinkageS2 = pagesFromAllSourcesInLinkageS2.stream()
 						.collect(Collectors.groupingBy(prodPage -> prodPage.getSource().getWebsite(), limitingList(2000)));
 				pagesFromAllSourcesInLinkageS2 = pagesFromAllSourcesInLinkageS2.stream().limit(2000).collect(Collectors.toList());

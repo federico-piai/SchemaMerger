@@ -37,11 +37,13 @@ public class CategoryMatcher {
 	private AlignmentDao dao;
 	private RConnector r;
 	private FeaturesBuilder fb;
+	private List<String> sourceNames;
 
-	public CategoryMatcher(AlignmentDao dao, RConnector r) {
+	public CategoryMatcher(AlignmentDao dao, RConnector r, List<String> sourceNames) {
 		this.dao = dao;
 		this.r = r;
 		this.fb = new FeaturesBuilder();
+		this.sourceNames = sourceNames;
 	}
 
 	/**
@@ -65,7 +67,7 @@ public class CategoryMatcher {
 		// LAST website is the one to be matched with the catalog
 		String newSource = websites.remove(websites.size() - 1);
 		// linked page -> pages in catalog
-		Map<SourceProductPage, List<SourceProductPage>> linkageMap = this.dao.getProdsInRL(websites, category);
+		Map<SourceProductPage, List<SourceProductPage>> linkageMap = this.dao.getProdsInRL(websites, category, this.sourceNames);
 		// check if new source is matchable
 		if (checkIfValidWebsite(newSource, linkageMap.keySet())) {
 			// specifications in catalog(merged) -> linked page (adding to attribute name the name of website, [att_name###website])
