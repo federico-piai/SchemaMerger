@@ -2,6 +2,7 @@ package connectors.dao;
 
 import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +53,9 @@ public class AlignmentDaoMock implements AlignmentDao {
 	@Override
 	public Map<Source, List<String>> getSchemas(List<String> categories, List<String> sourceNames) {
 		System.out.printf("Called getSchemas with categories %s, source allowed: %s\n", categories.toString(), String.valueOf(sourceNames));
-		return null;
+		HashMap<Source, List<String>> hashMap = new HashMap<Source, List<String>>();
+		hashMap.put(new Source(categories.get(0), MOCKED_WEBSITE1), Arrays.asList("map1"));
+		return hashMap;
 	}
 
 	@Override
@@ -99,9 +102,9 @@ public class AlignmentDaoMock implements AlignmentDao {
 	}
 
 	@Override
-	public SourceProductPage getPageFromUrlIfExistsInDataset(String url) {
+	public SourceProductPage getPageFromUrlIfExistsInDataset(String url, List<String> sourceNames) {
 		System.out.printf("Called getIfValid with url %s\n", url);
-		return null;
+		return new SourceProductPage("cat", url, MOCKED_WEBSITE1);
 	}
 
 }

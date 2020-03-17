@@ -114,10 +114,11 @@ public interface AlignmentDao {
 	 * ({@link SourceProductPage#getLinkage()}).
 	 * <p>
 	 * Note that it may happen that pages provided in linkage does not exist in the
-	 * dataset, because of noise in the linkage (or pages deleted as not relevant)
+	 * dataset, because of noise in the linkage (or pages deleted as not relevant), or
+	 * does not belong to list sourceNames
 	 * 
 	 * @param url
 	 * @return the product page with that link, null if it does not exist
 	 */
-	public SourceProductPage getPageFromUrlIfExistsInDataset(String url);
+	public SourceProductPage getPageFromUrlIfExistsInDataset(String url, List<String> sourceNames);
 }

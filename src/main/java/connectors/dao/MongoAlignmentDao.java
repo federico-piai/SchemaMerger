@@ -235,11 +235,12 @@ public class MongoAlignmentDao implements AlignmentDao {
 	}
 
 	@Override
-	public SourceProductPage getPageFromUrlIfExistsInDataset(String url) {
+	public SourceProductPage getPageFromUrlIfExistsInDataset(String url, List<String> sourceNames) {
 		Document firstResult = this.database.getCollection(MongoDbUtils.PRODUCTS_COLLECTION_NAME)
-				.find(Filters.and(Filters.eq(MongoDbUtils.URL, url),
+				.find(returnFilterAddingSourceNamesFilter(sourceNames, 
+						Filters.and(Filters.eq(MongoDbUtils.URL, url),
 						Filters.ne(MongoDbUtils.LINKAGE, Collections.EMPTY_LIST),
-						Filters.ne(MongoDbUtils.SPECS, new Document())))
+						Filters.ne(MongoDbUtils.SPECS, new Document()))))
 				.first();
 		SourceProductPage res = null;
 		if (firstResult != null) {

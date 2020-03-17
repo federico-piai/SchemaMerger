@@ -132,7 +132,7 @@ public class TrainingSetGenerator {
 
 		for (SourceProductPage doc1 : sample) {
 			for (String url : doc1.getLinkage()) {
-				SourceProductPage doc2 = this.dao.getPageFromUrlIfExistsInDataset(url);
+				SourceProductPage doc2 = this.dao.getPageFromUrlIfExistsInDataset(url, sourceNames);
 
 				if (doc2 != null) {
 

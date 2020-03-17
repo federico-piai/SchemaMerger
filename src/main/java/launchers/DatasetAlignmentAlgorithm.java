@@ -11,6 +11,7 @@ import connectors.FileDataConnector;
 import connectors.MongoDbConnectionFactory;
 import connectors.RConnector;
 import connectors.dao.AlignmentDao;
+import connectors.dao.AlignmentDaoMock;
 import connectors.dao.MongoAlignmentDao;
 import matcher.CategoryMatcher;
 import matcher.TrainingSetGenerator;
@@ -50,7 +51,7 @@ public class DatasetAlignmentAlgorithm {
 		RConnector r = new RConnector(lc.getConf().getModelPath());
 		MongoDbConnectionFactory factory = MongoDbConnectionFactory.getMongoInstance(lc.getConf().getMongoURI(),
 				lc.getConf().getDatabaseName());
-		AlignmentDao dao = new MongoAlignmentDao(factory);
+		AlignmentDao dao = new AlignmentDaoMock();
 		DatasetAlignmentAlgorithm algorithm = new DatasetAlignmentAlgorithm(dao, lc.getFdc(), r, lc.getConf());
 		return algorithm;
 	}
