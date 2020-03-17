@@ -204,7 +204,7 @@ public class DatasetAlignmentAlgorithm {
 			 * calcolati in funzione delle altre dimensioni, anche se questo calcolo non è
 			 * semplice da definire
 			 */
-			trainingSets.put(category, tsg.getTrainingSetWithTuples(300, 10000, true, 0.25, category));
+			trainingSets.put(category, tsg.getTrainingSetWithTuples(300, 2000, true, 0.25, category));
 		}
 
 		return trainingSets;

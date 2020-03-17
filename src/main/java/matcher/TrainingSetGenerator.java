@@ -74,15 +74,15 @@ public class TrainingSetGenerator {
 			newSizeP = newExamples.get("positives").size();
 			newSizeN = newExamples.get("negatives").size();
 			System.out.println(newSizeP + " + " + newSizeN + " = " + (newSizeP + newSizeN));
-			hasEnoughExamples = ((setSize * 0.95) <= (newSizeP + newSizeN))
-					&& ((newSizeP + newSizeN) <= (setSize * 1.05));
+			hasEnoughExamples = ((setSize * 0.95) <= (newSizeP + newSizeN));
+//					&& ((newSizeP + newSizeN) <= (setSize * 1.05));
 			tentatives++;
 			if ((sizeP + sizeN) < (newSizeP + newSizeN)) {
 				examples = newExamples;
 				sizeP = newSizeP;
 				sizeN = newSizeN;
 			}
-		} while (!hasEnoughExamples && tentatives < 10); // there must be enough examples, however don't loop too many
+		} while (!hasEnoughExamples && tentatives < 4); // there must be enough examples, however don't loop too many
 															// times
 
 		// if not enough examples were found, return an empty list
