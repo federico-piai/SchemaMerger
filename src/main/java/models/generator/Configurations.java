@@ -21,6 +21,9 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 	private List<String> websitesOrdered;
 	private boolean alreadyTrained;
 	private boolean trainingDataAlreadyAvailable;
+	private boolean excludeClonedSources;
+	private boolean useMutualInformation;
+	private boolean dropAttributesNotMatchingCatalog;
 
 	// Parameters for generation of Synthetic Dataset
 	private int maxPages;
@@ -60,7 +63,9 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 		this.websitesOrdered = Arrays.asList(prop.getProperty("websitesOrdered").split(","));
 		this.alreadyTrained = Boolean.valueOf(prop.getProperty("alreadyTrained"));
 		this.trainingDataAlreadyAvailable = Boolean.valueOf(prop.getProperty("trainingDataAlreadyAvailable"));
-
+		this.excludeClonedSources = Boolean.valueOf(prop.getProperty("excludeClonedSources"));
+		this.useMutualInformation = Boolean.valueOf(prop.getProperty("useMutualInformation"));
+		this.dropAttributesNotMatchingCatalog = Boolean.valueOf(prop.getProperty("dropAttributesNotMatchingCatalog"));
 		this.maxPages = Integer.valueOf(prop.getProperty("maxPages"));
 		this.minPages = Integer.valueOf(prop.getProperty("minPages"));
 		this.sources = Integer.valueOf(prop.getProperty("sources"));
@@ -92,6 +97,14 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 	}
 
 	/**
+	 * If TRUE, source attributes not matching any category attribute are dropped.
+	 * @return
+	 */
+	public boolean isDropAttributesNotMatchingCatalog() {
+		return dropAttributesNotMatchingCatalog;
+	}
+
+	/**
 	 * If true, uses the trained dump found in modelN.rda, otherwise recreate it
 	 * training data.
 	 * <p>
@@ -110,6 +123,14 @@ public class Configurations implements CatalogueConfiguration, SourceGeneratorCo
 	 */
 	public boolean trainingDataAlreadyAvailable() {
 		return this.trainingDataAlreadyAvailable;
+	}
+
+	public boolean isExcludeClonedSources() {
+		return excludeClonedSources;
+	}
+
+	public boolean isUseMutualInformation() {
+		return useMutualInformation;
 	}
 
 	public int getMaxPages() {

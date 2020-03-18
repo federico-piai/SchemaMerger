@@ -44,12 +44,20 @@ public class MongoAlignmentDao implements AlignmentDao {
 		List<SourceProductPage> sample = new ArrayList<>();
 		Bson eqFilter = Filters.eq(MongoDbUtils.CATEGORY, category);
 		Bson neFilterS = Filters.ne(MongoDbUtils.SPECS, new Document());
-		Bson neFilterL = Filters.ne(MongoDbUtils.LINKAGE, Collections.EMPTY_LIST);
+		
+		Bson linkageFilter;
+		if (sourceNames == null) {
+			linkageFilter = Filters.ne(MongoDbUtils.LINKAGE, Collections.EMPTY_LIST);
+		} else {
+			String regex = "(.*" + String.join(".*)|(.*", sourceNames) + ".*)";
+		//	String regex = sourceNames.stream().map(str -> "/.*"+ str + ".*/").collect(Collectors.toList());
+			linkageFilter = Filters.regex(MongoDbUtils.LINKAGE, regex);
+		}
 		Bson andFilter;
 		if (category.equals("all"))
-			andFilter = Filters.and(neFilterS, neFilterL);
+			andFilter = Filters.and(neFilterS, linkageFilter);
 		else
-			andFilter = Filters.and(neFilterS, neFilterL, eqFilter);
+			andFilter = Filters.and(neFilterS, eqFilter);
 		andFilter = returnFilterAddingSourceNamesFilter(sourceNames, andFilter);
 		Bson sampleBson = Aggregates.sample(size);
 		Bson matchBson = Aggregates.match(andFilter);

@@ -4,15 +4,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import models.matcher.DataFrame;
-
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.REngine;
 import org.rosuda.REngine.REngineException;
-import org.rosuda.REngine.REngineStdOutput;
 import org.rosuda.REngine.RList;
+
+import models.matcher.DataFrame;
 
 public class RConnector {
 
@@ -32,12 +31,15 @@ public class RConnector {
 		// start REngine
 		try {
 			/* for debugging */
-			this.eng = REngine.engineForClass("org.rosuda.REngine.JRI.JRIEngine", new String[] { "--vanilla" },
-					new REngineStdOutput(), false);
-			// this.eng =
-			// REngine.engineForClass("org.rosuda.REngine.JRI.JRIEngine");
+			//this.eng = REngine.engineForClass("org.rosuda.REngine.JRI.JRIEngine", new String[] { "--vanilla" },
+			//		new REngineStdOutput(), false);
+			this.eng =
+					REngine.engineForClass("org.rosuda.REngine.JRI.JRIEngine");
 			// load caret package
+			REXP parseAndEval = this.eng.parseAndEval("2+2");
+			System.out.println("Testing R engine, result of 2+2: "+parseAndEval.asDouble());
 			this.eng.parseAndEval("library(caret)");
+			System.out.println("Successfully imported library caret");
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (NoSuchMethodException e) {

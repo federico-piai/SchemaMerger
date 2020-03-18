@@ -25,10 +25,37 @@
 			<artifactId>mongodb-driver</artifactId>
 			<version>3.4.3</version>
 		</dependency>
+<!-- 		<dependency>
+		    <groupId>org.rosuda</groupId>
+		    <artifactId>JRI</artifactId>
+		    <scope>system</scope>
+		    <version>0.9.9</version>
+		    <systemPath>${project.basedir}/src/main/resources/JRI.jar</systemPath>
+		</dependency>
 		<dependency>
-			<groupId>org.nuiton.thirdparty</groupId>
+		    <groupId>org.rosuda</groupId>
+		    <artifactId>REngine</artifactId>
+		    <scope>system</scope>
+		   	<version>0.9.9</version>
+		    <systemPath>${project.basedir}/src/main/resources/REngine.jar</systemPath>
+		</dependency>
+		<dependency>
+		    <groupId>org.rosuda</groupId>
+		    <artifactId>JRIEngine</artifactId>
+		    <scope>system</scope>
+		    <version>0.9.9</version>
+		    <systemPath>${project.basedir}/src/main/resources/JRIEngine.jar</systemPath>
+		</dependency> -->
+		
+<!-- 		<dependency>
+		    <groupId>org.rosuda.REngine</groupId>
+		    <artifactId>REngine</artifactId>
+		    <version>2.1.0</version>
+		</dependency> -->
+ 		<dependency>
+			<groupId>com.github.lucarosellini.rJava</groupId>
 			<artifactId>JRI</artifactId>
-			<version>RELEASE</version>
+			<version>0.9-7</version>
 		</dependency>
 		<dependency>
 			<groupId>com.github.lucarosellini.rJava</groupId>

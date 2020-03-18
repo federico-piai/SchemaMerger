@@ -11,7 +11,6 @@ import connectors.FileDataConnector;
 import connectors.MongoDbConnectionFactory;
 import connectors.RConnector;
 import connectors.dao.AlignmentDao;
-import connectors.dao.AlignmentDaoMock;
 import connectors.dao.MongoAlignmentDao;
 import matcher.CategoryMatcher;
 import matcher.TrainingSetGenerator;
@@ -31,12 +30,6 @@ import models.matcher.Schema;
  */
 public class DatasetAlignmentAlgorithm {
 
-	/**
-	 * Se TRUE, gli attributi delle sorgenti che non matchano con nessun attributo
-	 * del catalogo vengono scartati. 
-	 */
-	static final boolean WITH_REFERENCE = true;
-
 	private AlignmentDao dao;
 	private FileDataConnector fdc;
 	private RConnector r;
@@ -51,7 +44,7 @@ public class DatasetAlignmentAlgorithm {
 		RConnector r = new RConnector(lc.getConf().getModelPath());
 		MongoDbConnectionFactory factory = MongoDbConnectionFactory.getMongoInstance(lc.getConf().getMongoURI(),
 				lc.getConf().getDatabaseName());
-		AlignmentDao dao = new AlignmentDaoMock();
+		AlignmentDao dao = new MongoAlignmentDao(factory);
 		DatasetAlignmentAlgorithm algorithm = new DatasetAlignmentAlgorithm(dao, lc.getFdc(), r, lc.getConf());
 		return algorithm;
 	}
@@ -86,7 +79,8 @@ public class DatasetAlignmentAlgorithm {
 			// Classification
 			System.out.println("INIZIO GENERAZIONE SCHEMA");
 			CategoryMatcher cm = new CategoryMatcher(this.dao, r, sourcesByLinkage);
-			Schema schema = launchClassification(sourcesByLinkage, categories.get(0), cm, 0, true, WITH_REFERENCE);
+			Schema schema = launchClassification(sourcesByLinkage, categories.get(0), cm, 0, config.isUseMutualInformation(), 
+					config.isDropAttributesNotMatchingCatalog());
 			fdc.printMatchSchema("clusters", schema);
 			System.out.println("FINE GENERAZIONE SCHEMA");
 			return schema;
@@ -107,10 +101,15 @@ public class DatasetAlignmentAlgorithm {
 				System.out.println("FINE LOADING DEL MODEL");
 			} else {
 				if (!config.trainingDataAlreadyAvailable()) {
-					System.out.println("INIZIO GENERAZIONE TRAINING SET");
-					String csPath = config.getTrainingSetPath() + "/clones.csv";
-					fdc.printClonedSources("clones", findClonedSources(categories));
-					Map<String, List<String>> clonedSources = fdc.readClonedSources(csPath);
+					Map<String, List<String>> clonedSources;
+					if (config.isExcludeClonedSources()) {
+						System.out.println("INIZIO GENERAZIONE TRAINING SET");
+						String csPath = config.getTrainingSetPath() + "/clones.csv";
+						fdc.printClonedSources("clones", findClonedSources(categories));
+						clonedSources = fdc.readClonedSources(csPath);
+					} else {
+						clonedSources =  new HashMap<>();
+					}
 					Map<String, List<String>> tSet = generateTrainingSets(categories, clonedSources);
 					fdc.printTrainingSet("trainingSet", tSet.get(categories.get(0)));
 					System.out.println("FINE GENERAZIONE TRAINING SET - INIZIO TRAINING");
@@ -122,7 +121,7 @@ public class DatasetAlignmentAlgorithm {
 			System.out.println("INIZIO GENERAZIONE SCHEMA");
 			CategoryMatcher cm = new CategoryMatcher(this.dao, r, config.getWebsitesOrdered());
 			Schema schema = launchClassification(config.getWebsitesOrdered(), 
-					categories.get(0), cm, 0, false, WITH_REFERENCE);
+					categories.get(0), cm, 0, config.isUseMutualInformation(), config.isDropAttributesNotMatchingCatalog());
 			fdc.printMatchSchema("clusters", schema);
 			System.out.println("FINE GENERAZIONE SCHEMA");
 		} finally {
