@@ -48,7 +48,7 @@ public class TrainingSetGeneratorTest {
 		clSources.put("aaa", Arrays.asList("a", "b", "c"));
 		this.fb = Mockito.mock(FeaturesBuilder.class);
 		dao = new AlignmentDaoMock();
-		trainingSetGenerator = new TrainingSetGenerator(fb, dao, clSources, null);
+		trainingSetGenerator = new TrainingSetGenerator(fb, dao, clSources);
 		this.pExamples = Arrays.asList(new Tuple(A1, A1, WEBSITE_TEST_1, WEBSITE_TEST_2, CATEGORY),
 				new Tuple(A1_2, A2_2, WEBSITE_TEST_1, WEBSITE_TEST_2, CATEGORY),
 				new Tuple(A1, A1, WEBSITE_TEST_1, AlignmentDaoMock.MOCKED_WEBSITE1, CATEGORY),

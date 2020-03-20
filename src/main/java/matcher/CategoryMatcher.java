@@ -67,7 +67,7 @@ public class CategoryMatcher {
 		// LAST website is the one to be matched with the catalog
 		String newSource = websites.remove(websites.size() - 1);
 		// linked page -> pages in catalog
-		Map<SourceProductPage, List<SourceProductPage>> linkageMap = this.dao.getProdsInRL(websites, category, this.sourceNames);
+		Map<SourceProductPage, List<SourceProductPage>> linkageMap = this.dao.getProdsInRL(websites, category);
 		// check if new source is matchable
 		if (checkIfValidWebsite(newSource, linkageMap.keySet())) {
 			// specifications in catalog(merged) -> linked page (adding to attribute name the name of website, [att_name###website])

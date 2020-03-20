@@ -31,8 +31,7 @@ public interface AlignmentDao {
 	 * @param category
 	 * @return
 	 */
-	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category,
-			List<String> sourceNames);
+	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category);
 
 	/**
 	 * Fetches the schemas of all sources that belong to one of the categories
@@ -42,7 +41,7 @@ public interface AlignmentDao {
 	 * @param sourceNames if you want to limit to selected sources, null to skip limiting
 	 * @return
 	 */
-	public Map<Source, List<String>> getSchemas(List<String> categories, List<String> sourceNames);
+	public Map<Source, List<String>> getSchemas(List<String> categories);
 
 	/**
 	 * Fetches the schema of a single source
@@ -74,7 +73,7 @@ public interface AlignmentDao {
 	 * @return
 	 */
 	public Map<SourceProductPage, List<SourceProductPage>> getProdsInRL(List<String> catalogWebsites, 
-			String category, List<String> sourceNames);
+			String category);
 
 	/**
 	 * Return product pages that match given filters.If a parameter is not provided
@@ -89,7 +88,7 @@ public interface AlignmentDao {
 	 * @return
 	 */
 	public List<SourceProductPage> getPagesLinkedWithSource2filtered(String category,
-			String website2, String attribute1, List<String> sourceName);
+			String website2, String attribute1);
 
 	/**
 	 * Find all pages of source website2 linked by pages in cList1, and having
@@ -103,8 +102,8 @@ public interface AlignmentDao {
 	 * @param attribute2
 	 * @return
 	 */
-	public List<Entry<Specifications, SourceProductPage>> getPairsOfPagesInLinkage(List<SourceProductPage> cList1, String website2,
-			String attribute2);
+	public List<Entry<Specifications, SourceProductPage>> getPairsOfPagesInLinkage(List<SourceProductPage> cList1, 
+			String website2, String attribute2);
 
 	/**
 	 * Provides a product page found in the dataset with the provided URL, if it
@@ -120,5 +119,5 @@ public interface AlignmentDao {
 	 * @param url
 	 * @return the product page with that link, null if it does not exist
 	 */
-	public SourceProductPage getPageFromUrlIfExistsInDataset(String url, List<String> sourceNames);
+	public SourceProductPage getPageFromUrlIfExistsInDataset(String url);
 }

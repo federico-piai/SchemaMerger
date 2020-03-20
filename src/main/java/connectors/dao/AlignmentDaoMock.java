@@ -21,27 +21,25 @@ public class AlignmentDaoMock implements AlignmentDao {
 	public static List<String> MOCKED_WEBSITES = Arrays.asList(MOCKED_WEBSITE1, "mock2.com", "mock3.com", "mock4.com");
 
 	@Override
-	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category, List<String> sourceNames) {
-		System.out.printf("Called getRLSample with size %d and category %s, source names: %s\n", size, category, String.valueOf(sourceNames));
-		return buildProdList(size, category, MOCKED_WEBSITE1, null, null, sourceNames);
+	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category) {
+		System.out.printf("Called getRLSample with size %d and category %s\n", size, category);
+		return buildProdList(size, category, MOCKED_WEBSITE1, null, null);
 	}
 
 	private List<SourceProductPage> buildProdList(int size, String category, String website, String website2_link,
-			String att1, List<String> sourceNames) {
+			String att1) {
 		website = StringUtils.isNotEmpty(website) ? website : null;
 		List<SourceProductPage> prods = new LinkedList<>();
 		for (int i = 0; i < size; i++) {
 			String websiteCurrent = ObjectUtils.firstNonNull(website, MOCKED_WEBSITES.get(i % MOCKED_WEBSITES.size()));
-			if (sourceNames == null || sourceNames.contains(websiteCurrent)) {
-				SourceProductPage prodPage = new SourceProductPage(category, buildUrl(websiteCurrent, i), websiteCurrent);
-				if (website2_link != null) {
-					prodPage.getLinkage().add(buildUrl(website2_link, i));
-				}
-				if (att1 != null) {
-					prodPage.addAttributeValue(att1, String.valueOf(i));
-				}
-				prods.add(prodPage);
+			SourceProductPage prodPage = new SourceProductPage(category, buildUrl(websiteCurrent, i), websiteCurrent);
+			if (website2_link != null) {
+				prodPage.getLinkage().add(buildUrl(website2_link, i));
 			}
+			if (att1 != null) {
+				prodPage.addAttributeValue(att1, String.valueOf(i));
+			}
+			prods.add(prodPage);
 		}
 		return prods;
 	}
@@ -51,8 +49,8 @@ public class AlignmentDaoMock implements AlignmentDao {
 	}
 
 	@Override
-	public Map<Source, List<String>> getSchemas(List<String> categories, List<String> sourceNames) {
-		System.out.printf("Called getSchemas with categories %s, source allowed: %s\n", categories.toString(), String.valueOf(sourceNames));
+	public Map<Source, List<String>> getSchemas(List<String> categories) {
+		System.out.printf("Called getSchemas with categories %s\n", categories.toString());
 		HashMap<Source, List<String>> hashMap = new HashMap<Source, List<String>>();
 		hashMap.put(new Source(categories.get(0), MOCKED_WEBSITE1), Arrays.asList("map1"));
 		return hashMap;
@@ -65,18 +63,18 @@ public class AlignmentDaoMock implements AlignmentDao {
 	}
 
 	@Override
-	public Map<SourceProductPage, List<SourceProductPage>> getProdsInRL(List<String> websites, String category, List<String> sourceNames) {
-		System.out.printf("Called getProdsInRL with websites %d and category %s, source allowed: %s\n", 
-				websites.toString(), category, String.valueOf(sourceNames));
+	public Map<SourceProductPage, List<SourceProductPage>> getProdsInRL(List<String> websites, String category) {
+		System.out.printf("Called getProdsInRL with websites %d and category %s\n", 
+				websites.toString(), category);
 		return null;
 	}
 
 	@Override
 	public List<SourceProductPage> getPagesLinkedWithSource2filtered(String category, String website2, 
-			String attribute1, List<String> sourceNames) {
-		System.out.printf("Called getProds with category %s and website2 %s and attribute1 %s, source allowed: %s\n",
-				category, website2, attribute1, String.valueOf(sourceNames));
-		return buildProdList(5, category, null, website2, attribute1, sourceNames);
+			String attribute1) {
+		System.out.printf("Called getProds with category %s and website2 %s and attribute1 %s\n",
+				category, website2, attribute1);
+		return buildProdList(5, category, null, website2, attribute1);
 	}
 
 	@Override
@@ -102,7 +100,7 @@ public class AlignmentDaoMock implements AlignmentDao {
 	}
 
 	@Override
-	public SourceProductPage getPageFromUrlIfExistsInDataset(String url, List<String> sourceNames) {
+	public SourceProductPage getPageFromUrlIfExistsInDataset(String url) {
 		System.out.printf("Called getIfValid with url %s\n", url);
 		return new SourceProductPage("cat", url, MOCKED_WEBSITE1);
 	}

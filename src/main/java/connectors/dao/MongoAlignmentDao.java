@@ -25,20 +25,20 @@ import connectors.MongoDbUtils;
 import model.AbstractProductPage.Specifications;
 import model.Source;
 import model.SourceProductPage;
+import models.generator.Configurations;
 import utils.UrlUtils;
 
-public class MongoAlignmentDao implements AlignmentDao {
+public class MongoAlignmentDao extends AlignmentAbstractDao {
 
 	private MongoDatabase database;
 
-	public MongoAlignmentDao(MongoDbConnectionFactory mongoConnector) {
-		super();
+	public MongoAlignmentDao(Configurations conf, MongoDbConnectionFactory mongoConnector) {
+		super(conf);
 		this.database = mongoConnector.getDatabase();
 	}
 
 	@Override
-	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category, 
-			List<String> sourceNames) {
+	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category) {
 		// uses sample method of MongoDB
 		MongoCollection<Document> collection = this.database.getCollection(MongoDbUtils.PRODUCTS_COLLECTION_NAME);
 		List<SourceProductPage> sample = new ArrayList<>();
@@ -46,11 +46,11 @@ public class MongoAlignmentDao implements AlignmentDao {
 		Bson neFilterS = Filters.ne(MongoDbUtils.SPECS, new Document());
 		
 		Bson linkageFilter;
-		if (sourceNames == null) {
+		if (getSourceNames() == null) {
 			linkageFilter = Filters.ne(MongoDbUtils.LINKAGE, Collections.EMPTY_LIST);
 		} else {
-			String regex = "(.*" + String.join(".*)|(.*", sourceNames) + ".*)";
-		//	String regex = sourceNames.stream().map(str -> "/.*"+ str + ".*/").collect(Collectors.toList());
+			String regex = "(.*" + String.join(".*)|(.*", getSourceNames()) + ".*)";
+		//	String regex = getSourceNames().stream().map(str -> "/.*"+ str + ".*/").collect(Collectors.toList());
 			linkageFilter = Filters.regex(MongoDbUtils.LINKAGE, regex);
 		}
 		Bson andFilter;
@@ -58,11 +58,11 @@ public class MongoAlignmentDao implements AlignmentDao {
 			andFilter = Filters.and(neFilterS, linkageFilter);
 		else
 			andFilter = Filters.and(neFilterS, eqFilter);
-		andFilter = returnFilterAddingSourceNamesFilter(sourceNames, andFilter);
+		andFilter = returnFilterAddingSourceNamesFilter(getSourceNames(), andFilter);
 		Bson sampleBson = Aggregates.sample(size);
 		Bson matchBson = Aggregates.match(andFilter);
 		collection.aggregate(Arrays.asList(matchBson, sampleBson))
-				.forEach((Document d) -> sample.add(MongoDbUtils.convertDocumentToProductPage(d)));
+				.forEach((Document d) -> sample.add(MongoDbUtils.convertDocumentToProductPage(d, getExcludedAttributes())));
 
 		return sample;
 	}
@@ -82,16 +82,17 @@ public class MongoAlignmentDao implements AlignmentDao {
 	}
 
 	@Override
-	public Map<Source, List<String>> getSchemas(List<String> categories, List<String> sourceNames) {
+	public Map<Source, List<String>> getSchemas(List<String> categories) {
 		Map<Source, List<String>> fetchedSchemas = new TreeMap<>();
 
 		this.database.getCollection(MongoDbUtils.SCHEMAS_COLLECTION)
-				.find(returnFilterAddingSourceNamesFilter(sourceNames, Filters.and(Filters.in(MongoDbUtils.CATEGORY, categories),
+				.find(returnFilterAddingSourceNamesFilter(getSourceNames(), Filters.and(Filters.in(MongoDbUtils.CATEGORY, categories),
 						Filters.ne(MongoDbUtils.ATTRIBUTES, Collections.EMPTY_LIST))))
 				.forEach((Document d) -> {
 					Source source = new Source(d.getString(MongoDbUtils.CATEGORY), d.getString(MongoDbUtils.WEBSITE));
 					@SuppressWarnings("unchecked")
 					List<String> attributes = d.get(MongoDbUtils.ATTRIBUTES, List.class);
+					attributes.removeAll(getExcludedAttributes());
 					fetchedSchemas.put(source, attributes);
 				});
 
@@ -107,14 +108,14 @@ public class MongoAlignmentDao implements AlignmentDao {
 		@SuppressWarnings("unchecked")
 		List<String> fetchedSchema = this.database.getCollection(MongoDbUtils.SCHEMAS_COLLECTION).find(andFilter)
 				.first().get(MongoDbUtils.ATTRIBUTES, List.class);
-
+		fetchedSchema.removeAll(getExcludedAttributes());
 		return fetchedSchema;
 	}
 
 	// TODO extract some parts
 	@Override
 	public Map<SourceProductPage, List<SourceProductPage>> getProdsInRL(
-			List<String> catalogWebsites, String category, List<String> sourceNames) {
+			List<String> catalogWebsites, String category) {
 		Map<SourceProductPage, List<SourceProductPage>> rlMap = new HashMap<>();
 		MongoCollection<Document> collection = this.database.getCollection(MongoDbUtils.PRODUCTS_COLLECTION_NAME);
 
@@ -142,7 +143,7 @@ public class MongoAlignmentDao implements AlignmentDao {
 		Map<Document, Document> extL = new HashMap<>();
 		Bson uFilter = Filters.in(MongoDbUtils.URL, linkageUrls.keySet());
 		
-		andFilter = returnFilterAddingSourceNamesFilter(sourceNames, Filters.and(cFilter, uFilter, sFilter));
+		andFilter = returnFilterAddingSourceNamesFilter(getSourceNames(), Filters.and(cFilter, uFilter, sFilter));
 		collection.find(andFilter)
 				.projection(Projections.include(MongoDbUtils.SPECS, MongoDbUtils.URL, MongoDbUtils.WEBSITE))
 				.forEach((Document p) -> {
@@ -167,8 +168,8 @@ public class MongoAlignmentDao implements AlignmentDao {
 						// TODO The linkage attribute here is "wrong" (unwinded) but it is not used
 						// anymore
 						// so it should be ok. However it is not a nice solution
-						linkageP.add(MongoDbUtils.convertUnwindedDocumentToProductPage(rlDoc));
-						linkageRlDoc.add(MongoDbUtils.convertDocumentToProductPage(p));
+						linkageP.add(MongoDbUtils.convertUnwindedDocumentToProductPage(rlDoc, getExcludedAttributes()));
+						linkageRlDoc.add(MongoDbUtils.convertDocumentToProductPage(p, getExcludedAttributes()));
 						intL.put(urlP, linkageP);
 						intL.put(urlRlDoc, linkageRlDoc);
 					}
@@ -180,8 +181,8 @@ public class MongoAlignmentDao implements AlignmentDao {
 			if (intL.containsKey(entry.getValue().getString(MongoDbUtils.URL)))
 				linkageList = intL.get(entry.getValue().getString(MongoDbUtils.URL));
 			else
-				linkageList.add(MongoDbUtils.convertUnwindedDocumentToProductPage(entry.getValue()));
-			rlMap.put(MongoDbUtils.convertDocumentToProductPage(entry.getKey()), linkageList);
+				linkageList.add(MongoDbUtils.convertUnwindedDocumentToProductPage(entry.getValue(), getExcludedAttributes()));
+			rlMap.put(MongoDbUtils.convertDocumentToProductPage(entry.getKey(), getExcludedAttributes()), linkageList);
 		}
 
 		// <linked page, list of pages in catalog>
@@ -190,7 +191,7 @@ public class MongoAlignmentDao implements AlignmentDao {
 
 	@Override
 	public List<SourceProductPage> getPagesLinkedWithSource2filtered(String category, String website2,
-			String attribute, List<String> sourceNames) {
+			String attribute) {
 		MongoCollection<Document> collection = this.database.getCollection(MongoDbUtils.PRODUCTS_COLLECTION_NAME);
 		List<SourceProductPage> prods = new ArrayList<>();
 		Bson cFilter = Filters.eq(MongoDbUtils.CATEGORY, category);
@@ -198,9 +199,9 @@ public class MongoAlignmentDao implements AlignmentDao {
 		Bson lFilter = Filters.eq(MongoDbUtils.LINKAGE, regex);
 		Bson aFilter = Filters.exists(MongoDbUtils.SPECS + "." + attribute, true);
 
-		Bson andFilter = returnFilterAddingSourceNamesFilter(sourceNames, Filters.and(cFilter, aFilter, lFilter));
+		Bson andFilter = returnFilterAddingSourceNamesFilter(getSourceNames(), Filters.and(cFilter, aFilter, lFilter));
 
-		collection.find(andFilter).forEach((Document d) -> prods.add(MongoDbUtils.convertDocumentToProductPage(d)));
+		collection.find(andFilter).forEach((Document d) -> prods.add(MongoDbUtils.convertDocumentToProductPage(d, getExcludedAttributes())));
 
 		return prods;
 	}
@@ -231,7 +232,7 @@ public class MongoAlignmentDao implements AlignmentDao {
 		Bson attFilter = Filters.exists(MongoDbUtils.SPECS + "." + attribute, true);
 		Bson andFilter = Filters.and(inFilter, attFilter);
 		collection.find(andFilter).projection(Projections.include(MongoDbUtils.SPECS, MongoDbUtils.URL))
-				.forEach((Document d) -> fetchedProducts.add(MongoDbUtils.convertDocumentToProductPage(d)));
+				.forEach((Document d) -> fetchedProducts.add(MongoDbUtils.convertDocumentToProductPage(d, getExcludedAttributes())));
 
 		// create record linkage list
 		fetchedProducts.stream().forEach(d -> {
@@ -243,16 +244,16 @@ public class MongoAlignmentDao implements AlignmentDao {
 	}
 
 	@Override
-	public SourceProductPage getPageFromUrlIfExistsInDataset(String url, List<String> sourceNames) {
+	public SourceProductPage getPageFromUrlIfExistsInDataset(String url) {
 		Document firstResult = this.database.getCollection(MongoDbUtils.PRODUCTS_COLLECTION_NAME)
-				.find(returnFilterAddingSourceNamesFilter(sourceNames, 
+				.find(returnFilterAddingSourceNamesFilter(getSourceNames(), 
 						Filters.and(Filters.eq(MongoDbUtils.URL, url),
 						Filters.ne(MongoDbUtils.LINKAGE, Collections.EMPTY_LIST),
 						Filters.ne(MongoDbUtils.SPECS, new Document()))))
 				.first();
 		SourceProductPage res = null;
 		if (firstResult != null) {
-			res = MongoDbUtils.convertDocumentToProductPage(firstResult);
+			res = MongoDbUtils.convertDocumentToProductPage(firstResult, getExcludedAttributes());
 		}
 		return res;
 	}

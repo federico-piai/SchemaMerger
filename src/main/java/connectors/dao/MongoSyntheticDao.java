@@ -1,6 +1,7 @@
 package connectors.dao;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -102,7 +103,8 @@ public class MongoSyntheticDao implements SyntheticDatasetDao {
 		List<CatalogueProductPage> products = new ArrayList<>();
 		MongoCollection<Document> collection = this.database.getCollection(MongoDbUtils.CATALOGUE_COLLECTION_NAME);
 		collection.find(Filters.in(MongoDbUtils.ID, ids))
-				.forEach((Document d) -> products.add(MongoDbUtils.convertDocumentToCataloguePage(d)));
+				.forEach((Document d) -> products.add(
+						MongoDbUtils.convertDocumentToCataloguePage(d, new LinkedList<>())));
 		return products;
 	}
 

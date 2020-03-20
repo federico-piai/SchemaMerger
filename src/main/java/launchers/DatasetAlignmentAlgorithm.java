@@ -44,7 +44,7 @@ public class DatasetAlignmentAlgorithm {
 		RConnector r = new RConnector(lc.getConf().getModelPath());
 		MongoDbConnectionFactory factory = MongoDbConnectionFactory.getMongoInstance(lc.getConf().getMongoURI(),
 				lc.getConf().getDatabaseName());
-		AlignmentDao dao = new MongoAlignmentDao(factory);
+		AlignmentDao dao = new MongoAlignmentDao(lc.getConf(), factory);
 		DatasetAlignmentAlgorithm algorithm = new DatasetAlignmentAlgorithm(dao, lc.getFdc(), r, lc.getConf());
 		return algorithm;
 	}
@@ -105,7 +105,7 @@ public class DatasetAlignmentAlgorithm {
 					if (config.isExcludeClonedSources()) {
 						System.out.println("INIZIO GENERAZIONE TRAINING SET");
 						String csPath = config.getTrainingSetPath() + "/clones.csv";
-						fdc.printClonedSources("clones", findClonedSources(categories));
+						fdc.printClonedSources("clones", findClonedSources(categories, config.getExcludedAttributes()));
 						clonedSources = fdc.readClonedSources(csPath);
 					} else {
 						clonedSources =  new HashMap<>();
@@ -152,10 +152,9 @@ public class DatasetAlignmentAlgorithm {
 	 * couples of sources with schemas that have an overlap of attribute (based on
 	 * their names) above 50% of the smallest of the two sources.
 	 */
-	private Map<Source, List<Source>> findClonedSources(List<String> categories) {
+	private Map<Source, List<Source>> findClonedSources(List<String> categories, List<String> excludedAttributes) {
 		Map<Source, List<Source>> clonedSources = new HashMap<>();
-		Map<Source, List<String>> sourceSchemas = 
-				this.dao.getSchemas(categories, config.getWebsitesOrdered());
+		Map<Source, List<String>> sourceSchemas = this.dao.getSchemas(categories);
 
 		for (Source source1 : sourceSchemas.keySet()) {
 			List<String> attributes1 = sourceSchemas.get(source1);
@@ -190,8 +189,7 @@ public class DatasetAlignmentAlgorithm {
 	private Map<String, List<String>> generateTrainingSets(List<String> categories,
 			Map<String, List<String>> clonedSources) {
 
-		TrainingSetGenerator tsg = new TrainingSetGenerator(this.dao, clonedSources, 
-				this.config.getWebsitesOrdered());
+		TrainingSetGenerator tsg = new TrainingSetGenerator(this.dao, clonedSources);
 		Map<String, List<String>> trainingSets = new HashMap<>();
 
 		for (String category : categories) {

@@ -42,16 +42,18 @@ public class MongoDbUtils {
 		collection.insertMany(docs);
 	}
 
-	public static CatalogueProductPage convertDocumentToCataloguePage(Document doc) {
+	public static CatalogueProductPage convertDocumentToCataloguePage(Document doc, List<String> excludedAtts) {
 		CatalogueProductPage cpp = new CatalogueProductPage(doc.getInteger(ID), doc.getString(CATEGORY));
-		addSpecsToDocument(doc, cpp);
+		addSpecsToDocument(doc, cpp, excludedAtts);
 		return cpp;
 	}
 
-	private static void addSpecsToDocument(Document doc, AbstractProductPage app) {
+	private static void addSpecsToDocument(Document doc, AbstractProductPage app, List<String> excludedAtts) {
 		Document specs = doc.get(SPECS, Document.class);
 		for (Entry<String, Object> entry : specs.entrySet()) {
-			app.addAttributeValue(entry.getKey(), entry.getValue().toString());
+			if (!excludedAtts.contains(entry.getKey())){ 
+				app.addAttributeValue(entry.getKey(), entry.getValue().toString());
+			}
 		}
 	}
 
@@ -73,23 +75,23 @@ public class MongoDbUtils {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static SourceProductPage convertDocumentToProductPage(Document doc) {
-		SourceProductPage page = docToProductPageHelper(doc);
+	public static SourceProductPage convertDocumentToProductPage(Document doc, List<String> excludedAtts) {
+		SourceProductPage page = docToProductPageHelper(doc, excludedAtts);
 		page.setLinkage(doc.get(LINKAGE, List.class));
 		return page;
 	}
 
-	public static SourceProductPage convertUnwindedDocumentToProductPage(Document doc) {
-		SourceProductPage page = docToProductPageHelper(doc);
+	public static SourceProductPage convertUnwindedDocumentToProductPage(Document doc, List<String> excludedAtts) {
+		SourceProductPage page = docToProductPageHelper(doc, excludedAtts);
 		page.setLinkage(Arrays.asList(doc.getString(LINKAGE)));
 		return page;
 	}
 
 	@SuppressWarnings("unchecked")
-	private static SourceProductPage docToProductPageHelper(Document doc) {
+	private static SourceProductPage docToProductPageHelper(Document doc, List<String> excludedAtts) {
 		SourceProductPage page = new SourceProductPage(doc.getString(CATEGORY), doc.getString(URL),
 				doc.getString(WEBSITE));
-		addSpecsToDocument(doc, page);
+		addSpecsToDocument(doc, page, excludedAtts);
 		page.setIds(doc.get(IDS, List.class));
 		return page;
 	}

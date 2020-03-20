@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import model.HeadOrTail;
 import model.Source;
 import model.SyntheticAttribute;
+import models.generator.Configurations;
 import models.generator.LaunchConfiguration;
 import models.matcher.EvaluationMetrics;
 import models.matcher.Schema;
@@ -49,6 +50,7 @@ public class Cohordinator {
 		System.out.println("FINE, statistiche: " + sdo.toString());
 		System.out.println("INIZIO ALLINEAMENTO");
 		Schema schema = algorithm.launchAlgorithmOnSyntheticDataset(sdo.getSourcesNamesByLinkage());
+		Configurations config = lc.getConf();
 
 		// Result Evaluation
 		System.out.println("INIZIO VALUTAZIONE RISULTATI");
@@ -56,7 +58,7 @@ public class Cohordinator {
 		Map<SyntheticAttribute, Integer> sizes = sdo.getAttrLinkage();
 		// FIXME move to configuration
 		//If WITHREFERENCE is true, I keep only clusters with at least one source attribute pertaining to the first source (considered as catalog) 
-		if (DatasetAlignmentAlgorithm.WITH_REFERENCE) {
+		if (config.isDropAttributesNotMatchingCatalog()) {
 			clusters = clusters.stream().filter(cluster -> {
 				boolean hasValidAttribute = false;
 				for (String a : cluster) {
@@ -68,7 +70,7 @@ public class Cohordinator {
 				}
 				return hasValidAttribute;
 			}).collect(Collectors.toList());
-			String category = lc.getConf().getCategories().get(0);
+			String category = config.getCategories().get(0);
 			List<SyntheticAttribute> validAttributes = algorithm.getDao()
 					.getSingleSchema(new Source(category, schema.getSourceCatalogueName())).stream()
 					.map(attr -> SyntheticAttribute.parseAttribute(attr)).collect(Collectors.toList());
