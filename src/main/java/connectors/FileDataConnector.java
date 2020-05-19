@@ -17,8 +17,6 @@ import java.util.Scanner;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import models.matcher.Schema;
-
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -27,6 +25,7 @@ import org.json.simple.parser.ParseException;
 import com.cedarsoftware.util.io.JsonWriter;
 
 import model.Source;
+import models.matcher.Schema;
 
 public class FileDataConnector {
 

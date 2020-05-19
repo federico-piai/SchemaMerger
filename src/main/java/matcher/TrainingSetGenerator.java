@@ -2,7 +2,6 @@ package matcher;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +14,9 @@ import connectors.dao.AlignmentDao;
 import model.AbstractProductPage.Specifications;
 import model.Source;
 import model.SourceProductPage;
+import models.generator.Configurations;
 import models.matcher.Features;
+import models.matcher.TrainingExamples;
 import models.matcher.Tuple;
 
 /**
@@ -39,8 +40,8 @@ public class TrainingSetGenerator {
 		this.fb = fb;
 	}	
 	
-	public TrainingSetGenerator(AlignmentDao dao, Map<String, List<String>> clSources) {
-		this(new FeaturesBuilder(), dao, clSources);
+	public TrainingSetGenerator(AlignmentDao dao, Map<String, List<String>> clSources, Configurations conf) {
+		this(new FeaturesBuilder(conf), dao, clSources);
 	}
 
 	/**
@@ -53,9 +54,9 @@ public class TrainingSetGenerator {
 	 * @return
 	 */
 	public List<String> getTrainingSetWithTuples(int sampleSize, int setSize, boolean addTuples,
-			double ratio, String category) {
+			double ratio, String category, boolean useMI, String fixedCatalogSource) {
 
-		Map<String, List<Tuple>> examples = new HashMap<>();
+		TrainingExamples finalExamples = null;
 		boolean hasEnoughExamples = false;
 		int newSizeP, newSizeN, sizeP = 0, sizeN = 0, tentatives = 0;
 
@@ -66,16 +67,17 @@ public class TrainingSetGenerator {
 		 *  set as the good one even if it is not big enough 
 		 */
 		do {
-			List<SourceProductPage> sample = this.dao.getSamplePagesFromCategory(sampleSize, category);
-			Map<String, List<Tuple>> newExamples = getExamples(sample, ratio);
-			newSizeP = newExamples.get("positives").size();
-			newSizeN = newExamples.get("negatives").size();
+			List<SourceProductPage> sample = this.dao.getSamplePagesFromCategory(sampleSize, category,  
+					fixedCatalogSource);
+			TrainingExamples newExamples = getExamples(sample, ratio, fixedCatalogSource);
+			newSizeP = newExamples.posSize();
+			newSizeN = newExamples.negSize();
 			System.out.println(newSizeP + " + " + newSizeN + " = " + (newSizeP + newSizeN));
 			hasEnoughExamples = ((setSize * 0.95) <= (newSizeP + newSizeN));
 //					&& ((newSizeP + newSizeN) <= (setSize * 1.05));
 			tentatives++;
 			if ((sizeP + sizeN) < (newSizeP + newSizeN)) {
-				examples = newExamples;
+				finalExamples = newExamples;
 				sizeP = newSizeP;
 				sizeN = newSizeN;
 			}
@@ -83,33 +85,27 @@ public class TrainingSetGenerator {
 															// times
 
 		// if not enough examples were found, return an empty list
-		if (examples.size() == 0) {
+		if (finalExamples == null) {
 			System.err.println("NON ABBASTANZA ESEMPI");
 			return new ArrayList<String>();
 		}
 
-		System.out.println(examples.get("positives").size() + " esempi positivi\t" + examples.get("negatives").size()+" esempi negativi");
+		System.out.println(finalExamples.posSize() + " esempi positivi\t" 
+				+ finalExamples.negSize() +" esempi negativi");
 
-		List<Features> trainingSet = computeFeaturesOnTrainingSet(examples.get("positives"), examples.get("negatives"), category);
+		List<Features> trainingSet = computeFeaturesOnTrainingSet(finalExamples, category);
 
 		// Training set is computed. Now, adapt it to the format required (a ~csv used by R).
 		List<String> tsRows = new ArrayList<>();
-
-		for (int i = 0; i < trainingSet.size(); i++) {
+		
+		for (Features f: trainingSet) {
 			String row = "";
 			if (addTuples) {
-				Tuple t;
-				if (i < sizeP)
-					t = examples.get("positives").get(i);
-				else
-					t = examples.get("negatives").get(i % sizeP);
-				row = t.toRowString();
+				row  = f.getT().toRowString();
 			}
-			Features f = trainingSet.get(i);
 			row += f.toString() + "," + f.getMatch();
 			tsRows.add(row);
 		}
-
 		return tsRows;
 	}
 
@@ -123,9 +119,8 @@ public class TrainingSetGenerator {
 	 *            pos-neg proportion
 	 * @return
 	 */
-	private Map<String, List<Tuple>> getExamples(List<SourceProductPage> sample, double ratio) {
-		List<Tuple> posExamples = new ArrayList<>();
-		List<Tuple> negExamples = new ArrayList<>();
+	private TrainingExamples getExamples(List<SourceProductPage> sample, double ratio, String fixedCatalogSource) {
+		TrainingExamples examples = new TrainingExamples();
 
 		for (SourceProductPage doc1 : sample) {
 			for (String url : doc1.getLinkage()) {
@@ -152,53 +147,32 @@ public class TrainingSetGenerator {
 						Collections.shuffle(allTmpPosEx);
 						// get max 10 examples from the same couple (to avoid biases from very similar pages with a lot of attributes)
 						List<Tuple> tmpPosEx = allTmpPosEx.subList(0, Math.min(10, allTmpPosEx.size()));
-						posExamples.addAll(tmpPosEx);
+						examples.addPositives(tmpPosEx);
 
 						// generates negative examples
 						for (int i = 0; i < tmpPosEx.size() - 1; i++) {
 							for (int j = i + 1; j < tmpPosEx.size(); j++) {
 								Tuple t1 = tmpPosEx.get(i);
 								Tuple t2 = tmpPosEx.get(j);
-								negExamples.add(t1.getMixedTuple(t2));
+								examples.addNegative(t1.getMixedTuple(t2));
 							}
 						}
 					}
 				}
 			}
 		}
-
-		posExamples = posExamples.stream().distinct().collect(Collectors.toList());
-		negExamples = negExamples.stream().distinct().collect(Collectors.toList());
-		Collections.shuffle(posExamples);
-		Collections.shuffle(negExamples);
-		//'ratio' is the ratio of positive examples on total examples (p + n = Total; p = ratio * Total)
-		//We want now the ratio between pos and neg --> p = r / (1-r) n
-		double ratioPosNeg = ratio / (1-ratio);
-		
-		int posSize = Math.min(posExamples.size(), (int) (negExamples.size() * ratioPosNeg));
-		int negSize = (int) (posSize / ratioPosNeg);
-		System.out.println(
-				"posExamples size = " + posExamples.size() + " --- posSize = " + posSize + " --- negSize = " + negSize);
-		if (posExamples.size() > posSize)
-			posExamples = posExamples.subList(0, posSize);
-		if (negExamples.size() > negSize)
-			negExamples = negExamples.subList(0, negSize);
-
-		Map<String, List<Tuple>> allExamples = new HashMap<>();
-		allExamples.put("positives", posExamples);
-		allExamples.put("negatives", negExamples);
-
-		return allExamples;
+		examples.balancePosNeg(ratio);
+		return examples;
 	}
 
-	public List<Features> computeFeaturesOnTrainingSet(List<Tuple> pExamples, List<Tuple> nExamples, String category) {
-		List<Features> examples = new ArrayList<>();
+	public List<Features> computeFeaturesOnTrainingSet(TrainingExamples examples, String category) {
+		List<Features> examplesFeatures = new ArrayList<>();
 		System.out.println("Positive examples");
-		examples.addAll(getAllFeatures(pExamples, category, 1));
+		examplesFeatures.addAll(getAllFeatures(examples.getPositives(), category, 1));
 		System.out.println("Negative examples");
-		examples.addAll(getAllFeatures(nExamples, category, 0));
+		examplesFeatures.addAll(getAllFeatures(examples.getNegatives(), category, 0));
 
-		return examples;
+		return examplesFeatures;
 	}
 
 	/**
@@ -216,7 +190,7 @@ public class TrainingSetGenerator {
 	 * @param candidateType
 	 * @return
 	 */
-	private List<Features> getAllFeatures(List<Tuple> tuples, String category, double candidateType) {
+	private List<Features> getAllFeatures(Set<Tuple> tuples, String category, double candidateType) {
 		List<Features> features = new ArrayList<>();
 		Map<String, Map<String, Map<String, List<Tuple>>>> a1_s2_a2_tuple = tuples.stream()
 				.collect(Collectors.groupingBy(Tuple::getAttribute1,
@@ -265,21 +239,21 @@ public class TrainingSetGenerator {
 		// Here we deal with tuple for a specific a1, a2 and w2, and all possible W1s.
 		List<Entry<Specifications, SourceProductPage>> cList2 = this.dao.getPairsOfPagesInLinkage(pagesInLinkageS2, website2,
 				attribute2);
-		List<String> websites1 = tuplesFromS2withA1A2.stream().map(t -> t.getWebsite1()).distinct()
+		List<Tuple> distinctTuples = tuplesFromS2withA1A2.stream().distinct()
 				.collect(Collectors.toList());
-		for (String website1 : websites1) {
+		for (Tuple t : distinctTuples) {
 			// pb.step();
-			Features feature = new Features();
-			List<SourceProductPage> subProds_of_w1 = w1_pagesLinkageS2.getOrDefault(website1, new ArrayList<>());
+			List<SourceProductPage> subProds_of_w1 = w1_pagesLinkageS2.getOrDefault(t.getWebsite1(), new ArrayList<>());
 			List<Entry<Specifications, SourceProductPage>> sList2 = this.dao.getPairsOfPagesInLinkage(subProds_of_w1, website2,
 					attribute2);
 			
 			try {
-				feature = this.fb.computeFeatures(sList2, cList2,
-						attribute1, attribute2, candidateType);
+				Features feature = this.fb.computeFeatures(sList2, cList2,
+						attribute1, attribute2, candidateType, t);
 				features.add(feature);
 			} catch (Exception e) {
-				System.err.printf("There was a problem computing features from %s-%s to %s-%s, skipping (error: %s)...", website1, attribute1,
+				System.err.printf("There was a problem computing features from %s-%s to %s-%s, skipping (error: %s)...", 
+						t.getWebsite1(), attribute1,
 						website2, attribute2, e.getMessage());
 			}
 		}

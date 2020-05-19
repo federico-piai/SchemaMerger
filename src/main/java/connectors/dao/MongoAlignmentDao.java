@@ -38,14 +38,14 @@ public class MongoAlignmentDao extends AlignmentAbstractDao {
 	}
 
 	@Override
-	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category) {
+	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category, String fixedCatalogSource) {
 		// uses sample method of MongoDB
 		MongoCollection<Document> collection = this.database.getCollection(MongoDbUtils.PRODUCTS_COLLECTION_NAME);
 		List<SourceProductPage> sample = new ArrayList<>();
-		Bson eqFilter = Filters.eq(MongoDbUtils.CATEGORY, category);
-		Bson neFilterS = Filters.ne(MongoDbUtils.SPECS, new Document());
+		Bson categoryFilter = Filters.eq(MongoDbUtils.CATEGORY, category);
+		Bson minOneAttributeFilterS = Filters.ne(MongoDbUtils.SPECS, new Document());
 		
-		Bson linkageFilter;
+		Bson linkageFilter = null;
 		if (getSourceNames() == null) {
 			linkageFilter = Filters.ne(MongoDbUtils.LINKAGE, Collections.EMPTY_LIST);
 		} else {
@@ -54,16 +54,29 @@ public class MongoAlignmentDao extends AlignmentAbstractDao {
 			linkageFilter = Filters.regex(MongoDbUtils.LINKAGE, regex);
 		}
 		Bson andFilter;
-		if (category.equals("all"))
-			andFilter = Filters.and(neFilterS, linkageFilter);
-		else
-			andFilter = Filters.and(neFilterS, eqFilter);
-		andFilter = returnFilterAddingSourceNamesFilter(getSourceNames(), andFilter);
+		if (category.equals("all")) {
+			andFilter = Filters.and(minOneAttributeFilterS, linkageFilter);
+		} else {
+			andFilter = Filters.and(minOneAttributeFilterS, categoryFilter, linkageFilter);
+		}
+		
+		if (fixedCatalogSource == null) {
+			andFilter = returnFilterAddingSourceNamesFilter(getSourceNames(), andFilter);}
+		else {
+			andFilter = Filters.and(andFilter, Filters.eq(MongoDbUtils.WEBSITE, fixedCatalogSource));
+		}
 		Bson sampleBson = Aggregates.sample(size);
 		Bson matchBson = Aggregates.match(andFilter);
-		collection.aggregate(Arrays.asList(matchBson, sampleBson))
-				.forEach((Document d) -> sample.add(MongoDbUtils.convertDocumentToProductPage(d, getExcludedAttributes())));
-
+		// Avoid internal catalog linkages
+		if (fixedCatalogSource != null) {
+			collection.aggregate(Arrays.asList(matchBson, sampleBson))
+			.forEach((Document d) -> sample.add(MongoDbUtils.convertDocumentToProductPageFilteringLinkage(
+						d, getExcludedAttributes(), fixedCatalogSource)));		
+		} else {
+			collection.aggregate(Arrays.asList(matchBson, sampleBson))
+				.forEach((Document d) -> sample.add(MongoDbUtils.convertDocumentToProductPage(
+							d, getExcludedAttributes())));
+		}
 		return sample;
 	}
 

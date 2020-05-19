@@ -19,6 +19,7 @@ import junit.framework.Assert;
 import model.AbstractProductPage.Specifications;
 import model.SourceProductPage;
 import models.matcher.Features;
+import models.matcher.TrainingExamples;
 import models.matcher.Tuple;
 
 /**
@@ -37,29 +38,28 @@ public class TrainingSetGeneratorTest {
 	private static final String WEBSITE_TEST_2 = "web2_linked.com";
 	private static final String CATEGORY = "category";
 	private TrainingSetGenerator trainingSetGenerator;
-	List<Tuple> pExamples;
-	List<Tuple> nExamples;
+	private TrainingExamples tex;
 	private FeaturesBuilder fb;
 	private AlignmentDaoMock dao;
 
 	@Before
 	public void setUp() throws Exception {
-		Map<String, List<String>> clSources = new HashMap<>();
-		clSources.put("aaa", Arrays.asList("a", "b", "c"));
+		Map<String, List<String>> clonedSources = new HashMap<>();
+		clonedSources.put("aaa", Arrays.asList("a", "b", "c"));
 		this.fb = Mockito.mock(FeaturesBuilder.class);
 		dao = new AlignmentDaoMock();
-		trainingSetGenerator = new TrainingSetGenerator(fb, dao, clSources);
-		this.pExamples = Arrays.asList(new Tuple(A1, A1, WEBSITE_TEST_1, WEBSITE_TEST_2, CATEGORY),
+		trainingSetGenerator = new TrainingSetGenerator(fb, dao, clonedSources);
+		this.tex = new TrainingExamples();
+		this.tex.addPositives(Arrays.asList(new Tuple(A1, A1, WEBSITE_TEST_1, WEBSITE_TEST_2, CATEGORY),
 				new Tuple(A1_2, A2_2, WEBSITE_TEST_1, WEBSITE_TEST_2, CATEGORY),
 				new Tuple(A1, A1, WEBSITE_TEST_1, AlignmentDaoMock.MOCKED_WEBSITE1, CATEGORY),
 				new Tuple(A1_2, A2_2, WEBSITE_TEST_1, AlignmentDaoMock.MOCKED_WEBSITE1, CATEGORY),
 				new Tuple(A1, A1, AlignmentDaoMock.MOCKED_WEBSITES.get(1), AlignmentDaoMock.MOCKED_WEBSITE1, CATEGORY),
 				new Tuple(A1_2, A2_2, AlignmentDaoMock.MOCKED_WEBSITES.get(1), AlignmentDaoMock.MOCKED_WEBSITE1,
-						CATEGORY)
-
+						CATEGORY))
 		);
-		this.nExamples = Arrays.asList(new Tuple(A1, A2, WEBSITE_TEST_1, WEBSITE_TEST_2, CATEGORY),
-				new Tuple(A1, A2, AlignmentDaoMock.MOCKED_WEBSITES.get(2), WEBSITE_TEST_2, CATEGORY));
+		this.tex.getNegatives().addAll(Arrays.asList(new Tuple(A1, A2, WEBSITE_TEST_1, WEBSITE_TEST_2, CATEGORY),
+				new Tuple(A1, A2, AlignmentDaoMock.MOCKED_WEBSITES.get(2), WEBSITE_TEST_2, CATEGORY)));
 	}
 
 	/* Risultati attesi:
@@ -81,44 +81,44 @@ public class TrainingSetGeneratorTest {
 	 */
 	@Test
 	public void testGetTrainingSet() {
-		System.out.println("Input: " + pExamples + "\n\nNEG: " + nExamples);
-		List<Features> res = this.trainingSetGenerator.computeFeaturesOnTrainingSet(pExamples, nExamples, CATEGORY);
+		System.out.println("Input: " + this.tex.getPositives() + "\n\nNEG: " + this.tex.getNegatives());
+		List<Features> res = this.trainingSetGenerator.computeFeaturesOnTrainingSet(this.tex, CATEGORY);
 		
 		//Pos examples
 		
 		Mockito.verify(this.fb).computeFeatures(
 				new ArrayList<>(), 
-				fullCList(A1, A1, WEBSITE_TEST_2),A1, A1, 1.0d);
+				fullCList(A1, A1, WEBSITE_TEST_2),A1, A1, 1.0d, null);
 		
 		Mockito.verify(this.fb).computeFeatures(
 				new ArrayList<>(), 
-				fullCList(A1_2, A2_2, WEBSITE_TEST_2),A1_2, A2_2, 1.0d);	
+				fullCList(A1_2, A2_2, WEBSITE_TEST_2),A1_2, A2_2, 1.0d, null);	
 		
 		Mockito.verify(this.fb).computeFeatures(
 				new ArrayList<>(), 
-				fullCList(A1, A1, AlignmentDaoMock.MOCKED_WEBSITE1),A1, A1, 1.0d);
+				fullCList(A1, A1, AlignmentDaoMock.MOCKED_WEBSITE1),A1, A1, 1.0d, null);
 		
 		Mockito.verify(this.fb).computeFeatures(
 				new ArrayList<>(), 
-				fullCList(A1_2, A2_2, AlignmentDaoMock.MOCKED_WEBSITE1),A1_2, A2_2, 1.0d);			
+				fullCList(A1_2, A2_2, AlignmentDaoMock.MOCKED_WEBSITE1),A1_2, A2_2, 1.0d, null);			
 		
 		Mockito.verify(this.fb).computeFeatures(
 				Arrays.asList(pair(spec(entry(A1, "1")), 1, AlignmentDaoMock.MOCKED_WEBSITE1, spec(entry(A1, "0")))),
-				fullCList(A1, A1, AlignmentDaoMock.MOCKED_WEBSITE1),A1, A1, 1.0d);
+				fullCList(A1, A1, AlignmentDaoMock.MOCKED_WEBSITE1),A1, A1, 1.0d, null);
 		
 		Mockito.verify(this.fb).computeFeatures(
 				Arrays.asList(pair(spec(entry(A1_2, "1")), 1, AlignmentDaoMock.MOCKED_WEBSITE1, spec(entry(A2_2, "0")))),
-				fullCList(A1_2, A2_2, AlignmentDaoMock.MOCKED_WEBSITE1),A1_2, A2_2, 1.0d);
+				fullCList(A1_2, A2_2, AlignmentDaoMock.MOCKED_WEBSITE1),A1_2, A2_2, 1.0d, null);
 		
 		//Neg examples
 		
 		Mockito.verify(this.fb).computeFeatures(
 				new ArrayList<>(), 
-				fullCList(A1, A2, WEBSITE_TEST_2),A1, A2, 0.0d);
+				fullCList(A1, A2, WEBSITE_TEST_2),A1, A2, 0.0d, null);
 		
 		Mockito.verify(this.fb).computeFeatures(
 				Arrays.asList(pair(spec(entry(A1, "2")), 2, WEBSITE_TEST_2, spec(entry(A2, "0")))),
-				fullCList(A1, A2, WEBSITE_TEST_2),A1, A2, 0.0d);
+				fullCList(A1, A2, WEBSITE_TEST_2),A1, A2, 0.0d, null);
 		
 
 		

@@ -21,8 +21,9 @@ public class AlignmentDaoMock implements AlignmentDao {
 	public static List<String> MOCKED_WEBSITES = Arrays.asList(MOCKED_WEBSITE1, "mock2.com", "mock3.com", "mock4.com");
 
 	@Override
-	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category) {
-		System.out.printf("Called getRLSample with size %d and category %s\n", size, category);
+	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category, String fixedCatalogSource) {
+		System.out.printf("Called getRLSample with size %d and category %s, catalog: %s\n", size, category, 
+				fixedCatalogSource);
 		return buildProdList(size, category, MOCKED_WEBSITE1, null, null);
 	}
 

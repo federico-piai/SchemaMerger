@@ -69,7 +69,8 @@ public class DatasetAlignmentAlgorithm {
 			} else {
 				System.out.println("INIZIO GENERAZIONE TRAINING SET");
 				// As we are in Synthetic dataset, there are no cloned sources
-				Map<String, List<String>> tSet = generateTrainingSets(categories, new HashMap<String, List<String>>());
+				Map<String, List<String>> tSet = generateTrainingSets(categories, 
+						new HashMap<String, List<String>>(), null);
 				fdc.printTrainingSet("trainingSet", tSet.get(categories.get(0)));
 				System.out.println("FINE GENERAZIONE TRAINING SET - INIZIO TRAINING");
 				r.train(config.getTrainingSetPath() + "/trainingSet.csv");
@@ -78,8 +79,8 @@ public class DatasetAlignmentAlgorithm {
 	
 			// Classification
 			System.out.println("INIZIO GENERAZIONE SCHEMA");
-			CategoryMatcher cm = new CategoryMatcher(this.dao, r, sourcesByLinkage);
-			Schema schema = launchClassification(sourcesByLinkage, categories.get(0), cm, 0, config.isUseMutualInformation(), 
+			CategoryMatcher cm = new CategoryMatcher(this.dao, r, this.config);
+			Schema schema = launchClassification(sourcesByLinkage, categories.get(0), cm, config.isUseMutualInformation(), 
 					config.isDropAttributesNotMatchingCatalog());
 			fdc.printMatchSchema("clusters", schema);
 			System.out.println("FINE GENERAZIONE SCHEMA");
@@ -94,6 +95,8 @@ public class DatasetAlignmentAlgorithm {
 			r.start();
 			// si possono definire più categorie nel fine di configurazione
 			List<String> categories = config.getCategories();
+			boolean dropAttributesNotMatchingCatalog = config.isDropAttributesNotMatchingCatalog();
+			List<String> websitesOrdered = config.getWebsitesOrdered();
 			// Training / model loading
 			if (config.isAlreadyTrained()) {
 				System.out.println("LOADING DEL MODEL");
@@ -110,7 +113,11 @@ public class DatasetAlignmentAlgorithm {
 					} else {
 						clonedSources =  new HashMap<>();
 					}
-					Map<String, List<String>> tSet = generateTrainingSets(categories, clonedSources);
+					// If we have a fixed first source as catalog, training would be done only on cat-source pages 
+					// in linkage
+					String fixedCatalogSource = dropAttributesNotMatchingCatalog ? websitesOrdered.get(0) : null;
+					Map<String, List<String>> tSet = generateTrainingSets(categories, clonedSources, 
+							fixedCatalogSource);
 					fdc.printTrainingSet("trainingSet", tSet.get(categories.get(0)));
 					System.out.println("FINE GENERAZIONE TRAINING SET - INIZIO TRAINING");
 				}
@@ -119,9 +126,9 @@ public class DatasetAlignmentAlgorithm {
 			}
 			// Classification
 			System.out.println("INIZIO GENERAZIONE SCHEMA");
-			CategoryMatcher cm = new CategoryMatcher(this.dao, r, config.getWebsitesOrdered());
-			Schema schema = launchClassification(config.getWebsitesOrdered(), 
-					categories.get(0), cm, 0, config.isUseMutualInformation(), config.isDropAttributesNotMatchingCatalog());
+			CategoryMatcher cm = new CategoryMatcher(this.dao, r, this.config);
+			Schema schema = launchClassification(websitesOrdered, 
+					categories.get(0), cm, config.isUseMutualInformation(), dropAttributesNotMatchingCatalog);
 			fdc.printMatchSchema("clusters", schema);
 			System.out.println("FINE GENERAZIONE SCHEMA");
 		} finally {
@@ -129,19 +136,23 @@ public class DatasetAlignmentAlgorithm {
 		}
 	}
 
-	// cardinality parameter is currently useless
 	private Schema launchClassification(List<String> orderedWebsites, String category, CategoryMatcher cm,
-			int cardinality, boolean useMI, boolean matchToOne) {
-		
-		String catalogueSourceName = orderedWebsites.get(0);
-		Schema schema = new Schema(catalogueSourceName);
-		List<String> currentMatchSources = new ArrayList<>();
-		currentMatchSources.add(catalogueSourceName);
-		// match su tutte le altre sorgenti
+			boolean useMI, boolean deleteIfNotInCatalog) {
+
+		// Initially, the first source is considered the catalog. Then, if deleteIfNotInCatalog is false,
+		// all sources for which we already detect alignment, are added to the catalog.
+		String initialSource = orderedWebsites.get(0);
+		Schema schema = new Schema(initialSource);
+		List<String> currentCatalogSources = new ArrayList<>();
+		currentCatalogSources.add(initialSource);
+		// Iteratively, we build the catalog merging pages of first N sources, then find all attribute matching with a new source.  
 		for (int i = 1; i < orderedWebsites.size(); i++) {
-			System.out.println("-->" + orderedWebsites.get(i) + "<-- (" + i + ")");
-			currentMatchSources.add(orderedWebsites.get(i));
-			cm.getMatch(currentMatchSources, category, cardinality, schema, useMI, matchToOne);
+			String sourceToMatch = orderedWebsites.get(i);
+			System.out.println("-->" + sourceToMatch + "<-- (" + i + ")");
+			cm.alignAttributeSchema(currentCatalogSources, sourceToMatch, category, schema, useMI, deleteIfNotInCatalog);
+			if (!deleteIfNotInCatalog) {
+				currentCatalogSources.add(sourceToMatch);
+			}
 		}
 
 		return schema;
@@ -187,9 +198,9 @@ public class DatasetAlignmentAlgorithm {
 	 * @return
 	 */
 	private Map<String, List<String>> generateTrainingSets(List<String> categories,
-			Map<String, List<String>> clonedSources) {
+			Map<String, List<String>> clonedSources, String fixedCatalogSource) {
 
-		TrainingSetGenerator tsg = new TrainingSetGenerator(this.dao, clonedSources);
+		TrainingSetGenerator tsg = new TrainingSetGenerator(this.dao, clonedSources, this.config);
 		Map<String, List<String>> trainingSets = new HashMap<>();
 
 		for (String category : categories) {
@@ -201,7 +212,8 @@ public class DatasetAlignmentAlgorithm {
 			 * calcolati in funzione delle altre dimensioni, anche se questo calcolo non è
 			 * semplice da definire
 			 */
-			trainingSets.put(category, tsg.getTrainingSetWithTuples(300, 2000, true, 0.25, category));
+			trainingSets.put(category, tsg.getTrainingSetWithTuples(300, 2000, true, 0.25, category, 
+					this.config.isUseMutualInformation(), fixedCatalogSource));
 		}
 
 		return trainingSets;

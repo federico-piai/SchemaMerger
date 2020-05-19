@@ -80,6 +80,19 @@ public class MongoDbUtils {
 		page.setLinkage(doc.get(LINKAGE, List.class));
 		return page;
 	}
+	
+	@SuppressWarnings("unchecked")
+	public static SourceProductPage convertDocumentToProductPageFilteringLinkage(Document doc, 
+			List<String> excludedAtts, String excludeSource) {
+		SourceProductPage page = docToProductPageHelper(doc, excludedAtts);
+		List<String> listLinkages = doc.get(LINKAGE, List.class);
+		for (String linkPage: listLinkages) {
+			if (!linkPage.contains(excludeSource)) {
+				page.getLinkage().add(linkPage);
+			}
+		}
+		return page;
+	}
 
 	public static SourceProductPage convertUnwindedDocumentToProductPage(Document doc, List<String> excludedAtts) {
 		SourceProductPage page = docToProductPageHelper(doc, excludedAtts);

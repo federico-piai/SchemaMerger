@@ -25,13 +25,14 @@ public interface AlignmentDao {
 
 	/**
 	 * Get a sample of N random pages from dataset, where N=size, provided they have
-	 * at least 1 attribute in specifications and 1 page in linkage
+	 * at least 1 attribute in specifications 
 	 * 
 	 * @param size
 	 * @param category
 	 * @return
 	 */
-	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category);
+	public List<SourceProductPage> getSamplePagesFromCategory(int size, String category, 
+			String fixedCatalogSource);
 
 	/**
 	 * Fetches the schemas of all sources that belong to one of the categories

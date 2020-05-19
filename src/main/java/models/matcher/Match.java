@@ -3,6 +3,12 @@ package models.matcher;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Matches between catalog and source attributes
+ * @author marco
+ *
+ * TODO VERY BAD IMPLEMENTATION, try to fix it in order to have list of triples, and not 3 lists that must be fixed using index.
+ */
 public class Match {
 
 	private List<String> sourceAttributes = new ArrayList<>();

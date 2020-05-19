@@ -19,9 +19,10 @@ public class Features {
 	private double sourceMI = 0.0;
 	private double categoryMI = 0.0;
 	private double match = 0.0;
+	private Tuple t;
 
-	public Features() {
-
+	public Features(Tuple t) {
+		this.t = t;
 	}
 
 	public double getSourceJSD() {
@@ -78,6 +79,10 @@ public class Features {
 
 	public void setMatch(double match) {
 		this.match = match;
+	}
+
+	public Tuple getT() {
+		return t;
 	}
 
 	public boolean hasNan() {

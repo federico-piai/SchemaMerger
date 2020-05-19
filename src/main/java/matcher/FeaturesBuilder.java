@@ -5,8 +5,10 @@ import java.util.Map.Entry;
 
 import model.SourceProductPage;
 import model.AbstractProductPage.Specifications;
+import models.generator.Configurations;
 import models.matcher.BagsOfWordsManager;
 import models.matcher.Features;
+import models.matcher.Tuple;
 
 /**
  * Build an object {@link Features} provided attributes source comparison and category comparison 
@@ -14,6 +16,13 @@ import models.matcher.Features;
  *
  */
 public class FeaturesBuilder {
+	
+	private boolean useMi;
+	
+	public FeaturesBuilder(Configurations conf) {
+		this.useMi = conf.isUseMutualInformation();
+	}
+	
 	
 	/**
 	 * Compute features for classification
@@ -25,9 +34,9 @@ public class FeaturesBuilder {
 	 * @return
 	 */
 	public Features computeFeatures(List<Entry<Specifications, SourceProductPage>> sList,
-			List<Entry<Specifications, SourceProductPage>> cList, String a1, String a2, boolean useMI) {
+			List<Entry<Specifications, SourceProductPage>> cList, String a1, String a2, Tuple t) {
 
-		Features features = new Features();
+		Features features = new Features(t);
 		BagsOfWordsManager sBags = new BagsOfWordsManager(a1, a2, sList);
 		BagsOfWordsManager cBags = new BagsOfWordsManager(a1, a2, cList);
 
@@ -35,7 +44,7 @@ public class FeaturesBuilder {
 		features.setCategoryJSD(FeatureExtractor.getJSD(cBags));
 		features.setSourceJC(FeatureExtractor.getJC(sBags));
 		features.setCategoryJC(FeatureExtractor.getJC(cBags));
-		if (useMI) {
+		if (this.useMi) {
 			features.setSourceMI(FeatureExtractor.getMI(sList, a1, a2));
 			features.setCategoryMI(FeatureExtractor.getMI(cList, a1, a2));
 		}
@@ -55,9 +64,9 @@ public class FeaturesBuilder {
 	 * @return
 	 */
 	public Features computeFeatures(List<Entry<Specifications, SourceProductPage>> sList,
-			List<Entry<Specifications, SourceProductPage>> cList, String a1, String a2, double type) {
+			List<Entry<Specifications, SourceProductPage>> cList, String a1, String a2, double type, Tuple t) {
 
-		Features features = computeFeatures(sList, cList, a1, a2, true);
+		Features features = computeFeatures(sList, cList, a1, a2, t);
 		features.setMatch(type);
 		return features;
 	}

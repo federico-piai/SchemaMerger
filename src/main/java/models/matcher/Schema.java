@@ -13,20 +13,20 @@ import java.util.Map;
  * @author marco
  *
  */
-// TODO remove totalLinkage and matchlinkage that are deprecated
 public class Schema {
 	private Map<String, String> attributesMap;
-	private Map<String, Integer> totalLinkage;
-	private Map<String, Integer> matchLinkage;
 	private String sourceCatalogueName;
 
 	public Schema(String sourceCatalogueName) {
 		this.attributesMap = new HashMap<>();
-		this.totalLinkage = new HashMap<>();
-		this.matchLinkage = new HashMap<>();
 		this.sourceCatalogueName = sourceCatalogueName;
 	}
 
+	/**
+	 * Generate output final clusters <br/>
+	 * 
+	 * @return
+	 */
 	public List<List<String>> schema2Clusters() {
 		Map<String, List<String>> schemaMap = new HashMap<>();
 		List<List<String>> finalSchema = new ArrayList<>();
@@ -50,22 +50,6 @@ public class Schema {
 
 	public void setAttributesMap(Map<String, String> attributesMap) {
 		this.attributesMap = attributesMap;
-	}
-
-	public Map<String, Integer> getTotalLinkage() {
-		return totalLinkage;
-	}
-
-	public void setTotalLinkage(Map<String, Integer> totalLinkage) {
-		this.totalLinkage = totalLinkage;
-	}
-
-	public Map<String, Integer> getMatchLinkage() {
-		return matchLinkage;
-	}
-
-	public void setMatchLinkage(Map<String, Integer> matchLinkage) {
-		this.matchLinkage = matchLinkage;
 	}
 
 	public String getSourceCatalogueName() {
