@@ -15,6 +15,7 @@ import models.generator.LaunchConfiguration;
 import models.matcher.EvaluationMetrics;
 import models.matcher.Schema;
 import utils.EvaluationUtils;
+import utils.ExternalAgrawalException;
 
 /**
  * Launch controller for Agrawal.
@@ -27,7 +28,7 @@ import utils.EvaluationUtils;
  */
 public class Cohordinator {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ExternalAgrawalException {
 		LaunchConfiguration setupConfiguration = LaunchConfiguration.setupConfiguration(args);
 		System.out.println("UTILIZZARE DATASET SINTETICO yoyo? (S/N)");
 		boolean useSynthDataset = false;
@@ -43,7 +44,7 @@ public class Cohordinator {
 			algorithm.launchAlgorithmOnRealDataset();
 	}
 
-	public static void testAlignmentOnSyntheticDataset(DatasetAlignmentAlgorithm algorithm, LaunchConfiguration lc) {
+	public static void testAlignmentOnSyntheticDataset(DatasetAlignmentAlgorithm algorithm, LaunchConfiguration lc) throws ExternalAgrawalException {
 		SyntheticDatasetGenerator sdg = SyntheticDatasetGenerator.sdgBuilder(lc);
 		System.out.println("INIZIO GENERAZIONE DATASET SINTETICO");
 		SyntheticDataOutputStat sdo = sdg.generateSyntheticData(true);

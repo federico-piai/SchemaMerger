@@ -43,7 +43,7 @@ public class TrainingExamples {
 			throw new RuntimeException("Missing examples for training");
 		}
 		
-		int actualRatioPosNeg = positives.size() / negatives.size();
+		double actualRatioPosNeg = (double) positives.size() / negatives.size();
 		if (actualRatioPosNeg < ratioPosNeg) { //need to augment ratio by reducing negatives
 			int negSizeDesired = (int) (positives.size() / actualRatioPosNeg);
 			this.negatives = sampleSet(negSizeDesired, this.negatives);

@@ -3,6 +3,7 @@ package connectors;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPDouble;
@@ -12,6 +13,7 @@ import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.RList;
 
 import models.matcher.DataFrame;
+import utils.ExternalAgrawalException;
 
 public class RConnector {
 
@@ -71,7 +73,7 @@ public class RConnector {
 	}
 
 	// generates classifier model
-	public void train(String tsPath) {
+	public void train(String tsPath) throws ExternalAgrawalException {
 		try {
 			// read training set
 			this.eng.parseAndEval("data <- read.csv(\"" + tsPath + "\",header=TRUE)");
@@ -91,7 +93,7 @@ public class RConnector {
 			this.eng.parseAndEval("save(" + this.modelName + ", file = \"" + this.modelPath + "\")");
 
 		} catch (REngineException | REXPMismatchException e) {
-			e.printStackTrace();
+			throw new ExternalAgrawalException("Problem with R while training", e);
 		} catch (Error e) {
 			System.out.println("ERROR!!!! " + e.getLocalizedMessage());
 		}
@@ -102,20 +104,21 @@ public class RConnector {
 	 * 
 	 * @param df
 	 * @return
+	 * @throws ExternalAgrawalException 
 	 */
-	public double[] classify(DataFrame df) {
+	public double[] classify(DataFrame df) throws ExternalAgrawalException {
 		double[] predictions = null;
+		
+		// build dataframe columns
+		String[] colNames = { "JSDs", "JSDc", "JCs", "JCc", "MIs", "MIc" };
+		double[] colJSDs = df.getJSDs().stream().mapToDouble(Double::doubleValue).toArray();
+		double[] colJSDc = df.getJSDc().stream().mapToDouble(Double::doubleValue).toArray();
+		double[] colJCs = df.getJCs().stream().mapToDouble(Double::doubleValue).toArray();
+		double[] colJCc = df.getJCc().stream().mapToDouble(Double::doubleValue).toArray();
+		double[] colMIs = df.getMIs().stream().mapToDouble(Double::doubleValue).toArray();
+		double[] colMIc = df.getMIc().stream().mapToDouble(Double::doubleValue).toArray();
 
 		try {
-			// build dataframe columns
-			String[] colNames = { "JSDs", "JSDc", "JCs", "JCc", "MIs", "MIc" };
-			double[] colJSDs = df.getJSDs().stream().mapToDouble(Double::doubleValue).toArray();
-			double[] colJSDc = df.getJSDc().stream().mapToDouble(Double::doubleValue).toArray();
-			double[] colJCs = df.getJCs().stream().mapToDouble(Double::doubleValue).toArray();
-			double[] colJCc = df.getJCc().stream().mapToDouble(Double::doubleValue).toArray();
-			double[] colMIs = df.getMIs().stream().mapToDouble(Double::doubleValue).toArray();
-			double[] colMIc = df.getMIc().stream().mapToDouble(Double::doubleValue).toArray();
-
 			// create dataframe
 			REXP mydf = REXP
 					.createDataFrame(new RList(
@@ -130,12 +133,21 @@ public class RConnector {
 			predictions = this.eng.parseAndEval("predictions$true").asDoubles();
 
 		} catch (REXPMismatchException e) {
-			e.printStackTrace();
+			dumpSubsetDf(df);
+			throw new ExternalAgrawalException("R error", e);
 		} catch (REngineException e) {
-			e.printStackTrace();
+			dumpSubsetDf(df);
+			throw new ExternalAgrawalException("Problem with R engine", e);
 		}
 
 		return predictions;
+	}
+
+	private void dumpSubsetDf(DataFrame df) {
+		System.out.println("dump of subset of R data");
+		List<String> csvFormat = df.toCSVFormat();
+		List<String> csvFormatSubset = csvFormat.subList(0, Math.min(5, csvFormat.size()));
+		System.out.println(String.join("\n", csvFormatSubset));
 	}
 
 }

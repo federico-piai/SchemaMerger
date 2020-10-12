@@ -18,6 +18,7 @@ import model.Source;
 import models.generator.Configurations;
 import models.generator.LaunchConfiguration;
 import models.matcher.Schema;
+import utils.ExternalAgrawalException;
 
 /**
  * Main class for the Agrawal dataset alignment algorithm
@@ -57,7 +58,7 @@ public class DatasetAlignmentAlgorithm {
 		this.config = config;
 	}
 	
-	public Schema launchAlgorithmOnSyntheticDataset(List<String> sourcesByLinkage) {
+	public Schema launchAlgorithmOnSyntheticDataset(List<String> sourcesByLinkage) throws ExternalAgrawalException {
 		try {
 			r.start();
 			List<String> categories = config.getCategories();
@@ -90,7 +91,7 @@ public class DatasetAlignmentAlgorithm {
 		}
 	}
 
-	public void launchAlgorithmOnRealDataset() {
+	public void launchAlgorithmOnRealDataset() throws ExternalAgrawalException {
 		try {
 			r.start();
 			// si possono definire più categorie nel fine di configurazione
